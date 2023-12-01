@@ -1,3 +1,20 @@
+- [_] Foundations - ivan
+    - [_] Niceness
+    - [_] Virtual DL
+- [_] Skip List Functions
+    - [_] Insert - 
+    - [_] Delete - 
+    - [_] Lookup - ivan
+- [_] nicefork - diego
+- [_] BFS Printing - 
+- [_] schedlog - diego
+
+- [_] Documentation
+    - [_] PDF
+    - [_] Video
+
+
+
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-24ddc0f5d75046c5622901739e7c5dd533143b0c8e959d652212380cedb1ea36.svg)](https://classroom.github.com/a/8HsS6-oF)
 xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
 Version 6 (v6).  xv6 loosely follows the structure and style of v6,
