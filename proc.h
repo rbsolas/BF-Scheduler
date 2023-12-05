@@ -49,6 +49,13 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+
+  // NEW VALUES ADDED:
+  int niceness;   // Each process has a default nice value of 0 and can be overridden via the nicefork syscall
+  int vdeadline;  // (Virtual Deadline)
+  // This value is updated whenever a process is created or fully consumes its quantum. 
+  // It is computed as the current time (in ticks) plus the product of the process’ priority
+  // ratio and the default quantum amount.
 };
 
 // Process memory is laid out contiguously, low addresses first:

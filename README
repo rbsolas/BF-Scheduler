@@ -1,10 +1,11 @@
-- [_] Foundations - ivan
+- [_] Foundations - diego
     - [_] Niceness
     - [_] Virtual DL
+    - [_] bfs.h
 - [_] Skip List Functions
-    - [_] Insert - 
-    - [_] Delete - 
-    - [_] Lookup - ivan
+    - [X] Insert - ivan
+    - [X] Delete - ivan 
+    - [X] Lookup - ivan
 - [_] nicefork - diego
 - [_] BFS Printing - 
 - [_] schedlog - diego

@@ -192,3 +192,28 @@ void            clearpteu(pde_t *pgdir, char *uva);
 
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
+
+// skip_list.c
+#define CHANCE 0.75
+#define MAX_LEVEL 4
+#define SEED 123456789
+
+// node structure for the skip list
+struct SkipNode {
+    int value;
+    struct SkipNode* forward[MAX_LEVEL];
+    struct SkipNode* backward[MAX_LEVEL]; // note: doubly linked
+};
+
+// skip list structure
+struct SkipList {
+    struct SkipNode* head;
+    int level;  // Current level of the skip list
+};
+
+
+struct SkipList* initSkipList();    // Function to initialize a new sorted skip list
+int slUpLevel(float p);               // Function to up a level by chance for a new element
+void slInsert(struct SkipList* skipList, int value, float p);     // Function to insert a value into the sorted skip list
+struct SkipNode* slSearch(struct SkipList* skipList, int value);  // Function to search for a value in the sorted skip list
+void printSkipList(struct SkipList* skipList);                  // Function to print the entire skip list
