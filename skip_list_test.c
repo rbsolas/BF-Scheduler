@@ -3,6 +3,10 @@
 
 // Test program 
 int main() {
+    // TEST PROGRAM DOESNT WORK CURRENTLY (needs to be in kernel space)
+    // pls check skip_list.c & defs.h for implementation
+
+
     // struct SkipList* skipList = initSkipList();
 
     // slInsert(skipList, 30, CHANCE);
