@@ -57,5 +57,20 @@ int main() {
     //     }
     // }
 
+    /*
+    printSkipList(skipList);
+
+    slDelete(skipList, 90);
+    printSkipList(skipList);
+
+
+    slDelete(skipList, 40);
+    printSkipList(skipList);
+
+    printf(1, "Searching deleted node: %d\n", search(skipList, 90));
+    printf(1, "Searching deleted node: %d\n", search(skipList, 40));
+    */
+
+
     exit();
 }

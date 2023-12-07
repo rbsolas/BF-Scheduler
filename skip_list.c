@@ -105,7 +105,46 @@ struct SkipNode* slSearch(struct SkipList* skipList, int value) {
     return 0;
 }
 
+void slDelete(struct SkipList* skipList, int value) {
+    struct SkipNode* current = skipList->head;
 
+    // printf(1, "Searching for value %d:\n", value);
+
+    for (int i = skipList->level; i >= 0; i--) { // Start from highest level
+        // printf(1, "  Checking level %d (current value: %d)\n", i, current->value);
+        while (current->forward[i] != 0 && current->forward[i]->value < value) {
+            // printf(1, "    Moving right at level %d (current value: %d)\n", i, current->forward[i]->value);
+            current = current->forward[i];
+        }
+
+        if (current->forward[i] != 0 && current->forward[i]->value == value) {
+            // printf(1, "Value %d to delete found at level %d\n", value, i); // Delete for each remaining levels
+            current = current->forward[i];
+
+            for (int j = i; j >= 0; j--){
+                struct SkipNode* toDelete = current;
+                struct SkipNode* tempForward = current->forward[j];
+                struct SkipNode* tempBackward = current->backward[j];
+                tempForward->backward[j] = tempBackward;
+                tempBackward->forward[j] = tempForward;
+                toDelete->forward[j] = 0;
+                toDelete->backward[j] = 0;
+
+                kfree(toDelete);
+
+                // printf(1, "Deleted from level %d (previous node now pointing to: %d, next node now pointing back to: %d)\n", j, tempBackward->forward[j]->value, tempForward->backward[j]->value);
+                // printf(1, "Deleted node pointing to garbage (forward pointer value: %d, backward pointer value: %d)\n", j, toDelete->forward[j]->value, toDelete->backward[j]->value);
+            }
+
+            // printf(1, "Value %d deleted successfully\n", value);
+
+            break;
+        }
+    }
+
+    // printf(1, "Value %d not found\n", value);
+    // return 0;
+}
 
 // Function to print the entire skip list
 void printSkipList(struct SkipList* skipList) {
