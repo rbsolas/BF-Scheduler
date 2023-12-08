@@ -26,6 +26,7 @@ int sleep(int);
 int uptime(void);
 int yield(void);
 int shutdown(void);
+int skippers(void); // DELETE ME (don't forget usys.S)
 
 // ulib.c
 int stat(const char*, struct stat*);

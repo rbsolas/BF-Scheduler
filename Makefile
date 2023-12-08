@@ -191,8 +191,6 @@ UPROGS=\
 	_zombie\
         _shutdown\
 		_skip_list_test\
-		_skip_list_user\
-
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

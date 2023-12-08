@@ -102,3 +102,71 @@ int sys_shutdown(void)
   shutdown();
   return 0;
 }
+
+int sys_skippers(void)
+{
+    struct SkipList* skipList = initSkipList();
+
+    slInsert(skipList, 30, CHANCE);
+    printSkipList(skipList);
+
+    slInsert(skipList, 60, CHANCE);
+    printSkipList(skipList);
+
+    slInsert(skipList, 90, CHANCE);
+    printSkipList(skipList);
+
+    slInsert(skipList, 40, CHANCE);
+    printSkipList(skipList);
+
+    slInsert(skipList, 20, CHANCE);
+    printSkipList(skipList);
+
+    slInsert(skipList, 80, CHANCE);
+    printSkipList(skipList);
+
+    slInsert(skipList, 70, CHANCE);
+    printSkipList(skipList);
+
+    slInsert(skipList, 50, CHANCE);
+    printSkipList(skipList);
+
+    slInsert(skipList, 10, CHANCE);
+    slInsert(skipList, 45, CHANCE);
+    slInsert(skipList, 85, CHANCE);
+    slInsert(skipList, 95, CHANCE);
+
+    printSkipList(skipList);
+
+    // Search for values
+    struct SkipNode* result1 = slSearch(skipList, 60);
+    struct SkipNode* result2 = slSearch(skipList, 20);
+    struct SkipNode* result3 = slSearch(skipList, 85);
+    struct SkipNode* result4 = slSearch(skipList, 100);
+
+    struct SkipNode* results[] = {result1, result2, result3, result4};
+    int values[] = {60, 20, 85, 100};
+
+    for (int i = 0; i < sizeof(results) / sizeof(results[0]); i++) {
+        if (results[i] != 0) {
+            cprintf("Value %d found\n", results[i]->value);
+        } else {
+            cprintf("Value %d not found\n", values[i]);
+        }
+    }
+
+    
+    printSkipList(skipList);
+
+    slDelete(skipList, 90);
+    printSkipList(skipList);
+
+
+    slDelete(skipList, 40);
+    printSkipList(skipList);
+
+    cprintf("Searching deleted node: %d\n", slSearch(skipList, 90));
+    cprintf("Searching deleted node: %d\n", slSearch(skipList, 40));
+
+    return 0;
+}
