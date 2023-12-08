@@ -319,6 +319,15 @@ wait(void)
 //  - swtch to start running that process
 //  - eventually that process transfers control
 //      via swtch back to the scheduler.
+
+int schedlog_active = 0;
+int schedlog_lasttick = 0;
+
+void schedlog(int n) {
+  schedlog_active = 1;
+  schedlog_lasttick = ticks + n;
+}
+
 void
 scheduler(void)
 {
@@ -342,6 +351,39 @@ scheduler(void)
       c->proc = p;
       switchuvm(p);
       p->state = RUNNING;
+
+
+      if (schedlog_active) {
+        if (ticks > schedlog_lasttick) {
+          schedlog_active = 0;
+        } else {
+            cprintf("%d", ticks);
+
+            struct proc *pp;
+            int highest_idx = -1;
+
+            for (int k = 0; k < NPROC; k++) {
+              pp = &ptable.proc[k];
+              if (pp->state != UNUSED) {
+                highest_idx = k;
+              }
+            }
+
+          for (int k = 0; k <= highest_idx; k++) {
+            pp = &ptable.proc[k];
+            // Reference: <tick>|[<PID>]<process name>:<state>:<nice>(<maxlevel>)(<deadline>)(<quantum>)
+            cprintf(" | [%d] %s:%d: <n>(<l>)(<dl>)(<q>)", k, pp->name, pp->state); // NOTE: REMOVE SPACES
+
+            /*
+            if (pp->state == UNUSED) cprintf(" | [%d] ---:0", k);
+            else if (pp->state == RUNNING) cprintf(" | [%d]*%s:%d", k, pp->name, pp->state);
+            else cprintf(" | [%d] %s:%d", k, pp->name, pp->state);
+            */
+          }
+          cprintf("\n");
+        }
+      }
+
 
       swtch(&(c->scheduler), p->context);
       switchkvm();

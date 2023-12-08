@@ -191,6 +191,8 @@ UPROGS=\
 	_zombie\
         _shutdown\
 		_skip_list_test\
+		_schedlog_test\
+		_loop\
 
 fs.img: mkfs README $(UPROGS)
 	./mkfs fs.img README $(UPROGS)

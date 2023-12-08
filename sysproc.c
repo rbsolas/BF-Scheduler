@@ -103,6 +103,17 @@ int sys_shutdown(void)
   return 0;
 }
 
+int sys_schedlog(void) {
+  int n;
+
+  if(argint(0, &n) < 0)
+    return -1;
+    
+  schedlog(n);
+  return 0;
+}
+
+
 int sys_skippers(void)
 {
     struct SkipList* skipList = initSkipList();

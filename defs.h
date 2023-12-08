@@ -218,3 +218,7 @@ void slInsert(struct SkipList* skipList, int value, float p);     // Function to
 struct SkipNode* slSearch(struct SkipList* skipList, int value);  // Function to search for a value in the sorted skip list
 void printSkipList(struct SkipList* skipList);                  // Function to print the entire skip list
 void slDelete(struct SkipList* skipList, int value);            // Function to delete a node in the skip list
+
+
+
+void schedlog(int);

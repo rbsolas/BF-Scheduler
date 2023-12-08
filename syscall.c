@@ -106,6 +106,7 @@ extern int sys_uptime(void);
 extern int sys_yield(void);
 extern int sys_shutdown(void);
 extern int sys_skippers(void);
+extern int sys_schedlog(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -131,6 +132,7 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 [SYS_yield] sys_yield,
 [SYS_shutdown] sys_shutdown,
+[SYS_schedlog] sys_schedlog,
 [SYS_skippers] sys_skippers, // DELETE ME
 };
 

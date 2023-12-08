@@ -22,6 +22,7 @@
 #define SYS_close     21
 #define SYS_yield     22
 #define SYS_shutdown  23
+#define SYS_schedlog  25
 
 // TEMPORARY DELETE ME AFTER THIS
 #define SYS_skippers 30 
