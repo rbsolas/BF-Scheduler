@@ -1,14 +1,15 @@
-- [_] Foundations - diego
-    - [_] Niceness
-    - [_] Virtual DL
-    - [_] bfs.h
-- [_] Skip List Functions
+- [X] Foundations - diego
+    - [X] Niceness
+    - [X] Virtual DL
+    - [X] bfs.h
+- [X] Skip List Functions
     - [X] Insert - ivan
     - [X] Delete - rohan 
     - [X] Lookup - ivan
-- [_] nicefork - diego
+- [X] nicefork - diego
 - [_] BFS Printing - 
-- [_] schedlog - diego, ivan
+- [_] schedlog - ivan
+- [_] Skip List Sched Integration
 
 - [_] Documentation
     - [_] PDF
