@@ -115,6 +115,7 @@ found:
   // BFS NEW VALS
   p->niceness = 0;
 
+  // TODO: NEED TO UPDATE VDEADLINE WHEN QUANTUM IS FINISHED
   int prioratio = 1;
   if (prioratio != BFS_NICE_FIRST_LEVEL) prioratio = p->niceness;
 

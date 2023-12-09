@@ -194,10 +194,6 @@ void            clearpteu(pde_t *pgdir, char *uva);
 // number of elements in fixed-size array
 #define NELEM(x) (sizeof(x)/sizeof((x)[0]))
 
-// proc.c (NEWLY ADDED)
-#define CHANCE 0.25
-#define MAX_LEVEL 4
-#define SEED 62301983
 
 // node structure for the skip list
 struct SkipNode {
