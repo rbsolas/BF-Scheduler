@@ -113,7 +113,15 @@ int sys_schedlog(void) {
   return 0;
 }
 
+int sys_nicefork(void) {
+  int nice;
 
+  if(argint(0, &nice) < 0)
+    return -1;
+  return nicefork(nice);
+}
+
+//! Temporary Sycall
 int sys_skippers(void)
 {
     struct SkipList* skipList = initSkipList();

@@ -112,6 +112,14 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
+  // BFS NEW VALS
+  p->niceness = 0;
+
+  int prioratio = 1;
+  if (prioratio != BFS_NICE_FIRST_LEVEL) prioratio = p->niceness;
+
+  p->vdeadline = ticks + prioratio * BFS_DEFAULT_QUANTUM;
+
   return p;
 }
 
@@ -174,20 +182,8 @@ growproc(int n)
   return 0;
 }
 
-// Create a new process copying p as the parent.
-// Sets up stack to return as if from system call.
-// Caller must set state of returned proc to RUNNABLE.
-int
-fork(void)
-{
-  int i, pid;
-  struct proc *np;
-  struct proc *curproc = myproc();
-
-  // Allocate process.
-  if((np = allocproc()) == 0){
-    return -1;
-  }
+int populateNewProc(struct proc *np, struct proc *curproc) {
+  int i;
 
   // Copy process state from proc.
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
@@ -196,6 +192,7 @@ fork(void)
     np->state = UNUSED;
     return -1;
   }
+
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
@@ -209,6 +206,56 @@ fork(void)
   np->cwd = idup(curproc->cwd);
 
   safestrcpy(np->name, curproc->name, sizeof(curproc->name));
+
+  return 0;
+}
+
+// Create a new process copying p as the parent.
+// Sets up stack to return as if from system call.
+// Caller must set state of returned proc to RUNNABLE.
+int
+fork(void)
+{
+  int pid;
+  struct proc *np;
+  struct proc *curproc = myproc();
+
+  // Allocate process.
+  if((np = allocproc()) == 0){
+    return -1;
+  }
+
+  if (populateNewProc(np, curproc) == -1) {
+    return -1;
+  }
+
+  pid = np->pid;
+
+  acquire(&ptable.lock);
+
+  np->state = RUNNABLE;
+
+  release(&ptable.lock);
+
+  return pid;
+}
+
+// behaves like fork except that it also sets the nice value of the child process to the integer argument passed.
+int nicefork(int nice) {
+  int pid;
+  struct proc *np;
+  struct proc *curproc = myproc();
+
+  // Allocate process.
+  if((np = allocproc()) == 0){
+    return -1;
+  }
+
+  if (populateNewProc(np, curproc) == -1) {
+    return -1;
+  }
+
+  np->niceness = nice;
 
   pid = np->pid;
 
