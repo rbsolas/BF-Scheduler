@@ -56,6 +56,7 @@ struct proc {
   // This value is updated whenever a process is created or fully consumes its quantum. 
   // It is computed as the current time (in ticks) plus the product of the process’ priority
   // ratio and the default quantum amount.
+  int ticks_left;
 };
 
 // Process memory is laid out contiguously, low addresses first:

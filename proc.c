@@ -400,6 +400,8 @@ scheduler(void)
       switchuvm(p);
       p->state = RUNNING;
 
+      p->ticks_left = BFS_DEFAULT_QUANTUM;
+
 
       if (schedlog_active) {
         if (ticks > schedlog_lasttick) {
