@@ -182,20 +182,8 @@ growproc(int n)
   return 0;
 }
 
-// Create a new process copying p as the parent.
-// Sets up stack to return as if from system call.
-// Caller must set state of returned proc to RUNNABLE.
-int
-fork(void)
-{
-  int i, pid;
-  struct proc *np;
-  struct proc *curproc = myproc();
-
-  // Allocate process.
-  if((np = allocproc()) == 0){
-    return -1;
-  }
+int populateNewProc(struct proc *np, struct proc *curproc) {
+  int i;
 
   // Copy process state from proc.
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
@@ -204,6 +192,7 @@ fork(void)
     np->state = UNUSED;
     return -1;
   }
+
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
@@ -217,6 +206,28 @@ fork(void)
   np->cwd = idup(curproc->cwd);
 
   safestrcpy(np->name, curproc->name, sizeof(curproc->name));
+
+  return 0;
+}
+
+// Create a new process copying p as the parent.
+// Sets up stack to return as if from system call.
+// Caller must set state of returned proc to RUNNABLE.
+int
+fork(void)
+{
+  int pid;
+  struct proc *np;
+  struct proc *curproc = myproc();
+
+  // Allocate process.
+  if((np = allocproc()) == 0){
+    return -1;
+  }
+
+  if (populateNewProc(np, curproc) == -1) {
+    return -1;
+  }
 
   pid = np->pid;
 
@@ -231,7 +242,7 @@ fork(void)
 
 // behaves like fork except that it also sets the nice value of the child process to the integer argument passed.
 int nicefork(int nice) {
-  int i, pid;
+  int pid;
   struct proc *np;
   struct proc *curproc = myproc();
 
@@ -240,33 +251,17 @@ int nicefork(int nice) {
     return -1;
   }
 
-  // Copy process state from proc.
-  if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
-    kfree(np->kstack);
-    np->kstack = 0;
-    np->state = UNUSED;
+  if (populateNewProc(np, curproc) == -1) {
     return -1;
   }
-  np->sz = curproc->sz;
-  np->parent = curproc;
-  *np->tf = *curproc->tf;
 
-  // Clear %eax so that fork returns 0 in the child.
-  np->tf->eax = 0;
-
-  for(i = 0; i < NOFILE; i++)
-    if(curproc->ofile[i])
-      np->ofile[i] = filedup(curproc->ofile[i]);
-  np->cwd = idup(curproc->cwd);
-
-  safestrcpy(np->name, curproc->name, sizeof(curproc->name));
+  np->niceness = nice;
 
   pid = np->pid;
 
   acquire(&ptable.lock);
 
   np->state = RUNNABLE;
-  np->niceness = nice;
 
   release(&ptable.lock);
 
