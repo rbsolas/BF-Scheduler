@@ -59,6 +59,7 @@
   "files.associations": {
     "defs.h": "c",
     "param.h": "c",
-    "types.h": "c"
+    "types.h": "c",
+    "proc.h": "c"
   }
 }

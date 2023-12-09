@@ -121,7 +121,7 @@ void            userinit(void);
 int             wait(void);
 void            wakeup(void*);
 void            yield(void);
-int             nicefork(void);
+int             nicefork(int);
 
 // swtch.S
 void            swtch(struct context**, struct context*);

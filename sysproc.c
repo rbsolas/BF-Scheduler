@@ -104,5 +104,9 @@ int sys_shutdown(void)
 }
 
 int sys_nicefork(void) {
-  return nicefork();
+  int nice;
+
+  if(argint(0, &nice) < 0)
+    return -1;
+  return nicefork(nice);
 }
