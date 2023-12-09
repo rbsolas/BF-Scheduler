@@ -3,5 +3,4 @@
 #define BFS_NICE_LAST_LEVEL 3       // Most positive possible nice value; assumed never to be set less than FIRST LEVEL
 
 #define CHANCE 0.25
-#define MAX_LEVEL 4
 #define SEED 62301983

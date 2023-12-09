@@ -158,13 +158,13 @@ int sys_skippers(void)
     printSkipList(skipList);
 
     // Search for values
-    struct SkipNode* result1 = slSearch(skipList, 60);
+    struct SkipNode* result1 = slSearch(skipList, 0);
     struct SkipNode* result2 = slSearch(skipList, 20);
     struct SkipNode* result3 = slSearch(skipList, 85);
     struct SkipNode* result4 = slSearch(skipList, 100);
 
     struct SkipNode* results[] = {result1, result2, result3, result4};
-    int values[] = {60, 20, 85, 100};
+    int values[] = {0, 20, 85, 100};
 
     for (int i = 0; i < sizeof(results) / sizeof(results[0]); i++) {
         if (results[i] != 0) {
@@ -175,17 +175,17 @@ int sys_skippers(void)
     }
 
     
-    printSkipList(skipList);
+    // printSkipList(skipList);
 
-    slDelete(skipList, 90);
-    printSkipList(skipList);
+    // slDelete(skipList, 90);
+    // printSkipList(skipList);
 
 
-    slDelete(skipList, 40);
-    printSkipList(skipList);
+    // slDelete(skipList, 40);
+    // printSkipList(skipList);
 
-    cprintf("Searching deleted node: %d\n", slSearch(skipList, 90));
-    cprintf("Searching deleted node: %d\n", slSearch(skipList, 40));
+    // cprintf("Searching deleted node: %d\n", slSearch(skipList, 90));
+    // cprintf("Searching deleted node: %d\n", slSearch(skipList, 40));
 
     return 0;
 }
