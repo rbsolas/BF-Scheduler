@@ -112,6 +112,14 @@ found:
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
 
+  // BFS NEW VALS
+  p->niceness = 0;
+
+  int prioratio = 1;
+  if (prioratio != BFS_NICE_FIRST_LEVEL) prioratio = p->niceness;
+
+  p->vdeadline = ticks + prioratio * BFS_DEFAULT_QUANTUM;
+
   return p;
 }
 
@@ -219,6 +227,10 @@ fork(void)
   release(&ptable.lock);
 
   return pid;
+}
+
+int nicefork(void) {
+
 }
 
 // Exit the current process.  Does not return.
