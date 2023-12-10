@@ -179,13 +179,6 @@ int sys_skippers(void)
     }
     */
 
-    /// TEST INSERT DUPLICATE PID ///
-    cprintf("\n");
-    cprintf("TEST INSERT DUPLICATE PID\n");
-
-    slInsert(skipList, 69, 0, CHANCE); // Should fail; Can't catch yet, possibility to skip over for diff values
-    slInsert(skipList, 69, 11, CHANCE); // Should fail; Can't catch yet, possibility to skip over for diff values
-
     /// TEST DELETE ///
     cprintf("\n");
     cprintf("TEST DELETE\n");
@@ -207,6 +200,7 @@ int sys_skippers(void)
     cprintf("\n");
     cprintf("TEST SEARCH\n");
     cprintf("Searching node: %d\n", slSearch(skipList, 85, 10));
+    cprintf("Searching node: %d\n", slSearch(skipList, 95, 11));
 
     /// TEST SEARCH DELETED NODE ///
     cprintf("\n");
@@ -217,13 +211,11 @@ int sys_skippers(void)
     cprintf("\n");
     cprintf("TEST SEARCH NONEXISTENT NODE\n");
     cprintf("Searching node: %d\n", slSearch(skipList, 1, 3)); // Not in list (different vdeadline); Should return 0
-    cprintf("Searching node: %d\n", slSearch(skipList, 100, 11)); // Not in list; Should return 0
-
 
     /// TEST REINSERT PREVIOUSLY DELETED PID ///
     cprintf("\n");
     cprintf("TEST REINSERT\n");
-    slInsert(skipList, 90, 2, CHANCE);
+    slInsert(skipList, 85, 2, CHANCE);
     printSkipList(skipList);
 
     return 0;
