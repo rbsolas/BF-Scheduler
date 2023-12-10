@@ -198,7 +198,7 @@ void            clearpteu(pde_t *pgdir, char *uva);
 // node structure for the skip list
 struct SkipNode {
     int value;
-
+    int pid;
     // instead of keeping an array of pointers, we just store their array indices
     int forward[BFS_NICE_LAST_LEVEL + 1];
     int backward[BFS_NICE_LAST_LEVEL + 1]; // note: doubly linked
@@ -207,7 +207,7 @@ struct SkipNode {
 
 // skip list structure
 struct SkipList {
-    struct SkipNode nodeList[NPROC + 1];
+    struct SkipNode nodeList[NPROC + 1]; // Sentinel + Max # of processes
     // struct SkipNode* head;
     int level;  // Current level of the skip list
 };
@@ -215,10 +215,10 @@ struct SkipList {
 
 struct SkipList* initSkipList();    // Function to initialize a new sorted skip list
 int slUpLevel(float p);               // Function to up a level by chance for a new element
-void slInsert(struct SkipList* skipList, int value, float p);     // Function to insert a value into the sorted skip list
-struct SkipNode* slSearch(struct SkipList* skipList, int value);  // Function to search for a value in the sorted skip list
+void slInsert(struct SkipList* skipList, int value, int pid, float p);     // Function to insert a value into the sorted skip list
+struct SkipNode* slSearch(struct SkipList* skipList, int value, int pid);  // Function to search for a value in the sorted skip list
+struct SkipNode* slDelete(struct SkipList* skipList, int value, int pid);            // Function to delete a node in the skip list
 void printSkipList(struct SkipList* skipList);                  // Function to print the entire skip list
-void slDelete(struct SkipList* skipList, int value);            // Function to delete a node in the skip list
 
 
 

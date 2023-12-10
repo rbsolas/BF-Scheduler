@@ -634,15 +634,17 @@ struct SkipList* initSkipList() {
 
   // Initialize head node kept at index 0
   skipList->nodeList[0].value = -1;
-  skipList->nodeList[0].valid = 1;    // Valid bit for Head should always be true
+  skipList->nodeList[0].pid = -1;
+  skipList->nodeList[0].valid = 1;   // Valid bit for sentinel should always be true
 
-  for(int i = 0; i < BFS_NICE_LAST_LEVEL + 1; i++) {
+  // Sentinel is alone and sad, no forward and backward neighbors
+  for(int i = 0; i <= BFS_NICE_LAST_LEVEL; i++) { 
     skipList->nodeList[0].forward[i] = -1;
     skipList->nodeList[0].backward[i] = -1;
   }
 
   // Set valid bit for all other nodes to 0 (empty list)
-  for (int i = 1; i < NPROC + 1; i++) {
+  for (int i = 1; i <= NPROC; i++) {
       skipList->nodeList[i].valid = 0;
   }
 
@@ -667,9 +669,9 @@ int slUpLevel(float p) {
 }
 
 // Function to insert a value into the sorted skip list
-void slInsert(struct SkipList* skipList, int value, float p) {
+void slInsert(struct SkipList* skipList, int value, int pid, float p) {
   struct SkipNode* update[4];
-  cprintf("Inserting value %d:\n", value);
+  cprintf("Inserting PID %d with vdeadline %d:\n", pid, value);
 
   //* 1 - FIND THE NODE TO INSERT NEW NODE AT
   // ----------------------------------------------------
@@ -678,13 +680,22 @@ void slInsert(struct SkipList* skipList, int value, float p) {
   struct SkipNode *current = &skipList->nodeList[currentIdx]; // element 0 is the head node
 
   for (int i = skipList->level; i >= 0; i--) {
-      while (current->forward[i] != -1 && skipList->nodeList[current->forward[i]].value < value) {
-          cprintf("  Moving right at level %d (current value: %d)\n", i, skipList->nodeList[current->forward[i]].value);
+      while (current->forward[i] != -1 
+        && skipList->nodeList[current->forward[i]].value < value
+        && skipList->nodeList[current->forward[i]].pid != pid) {
+          cprintf("  Moving right at level %d (Current node: PID %d with vdeadline %d)\n", i, skipList->nodeList[current->forward[i]].pid, skipList->nodeList[current->forward[i]].value);
           currentIdx = current->forward[i];
           current = &skipList->nodeList[currentIdx];
       }
+
+      // PID already has an associated valid entry in the list
+      if (skipList->nodeList[current->forward[i]].valid  == 1 && skipList->nodeList[current->forward[i]].pid == pid){
+        cprintf("  Duplicate PID %d found, insert failed\n", pid);
+        return;
+      }
+
       update[i] = current;
-      cprintf("  Reached the rightmost node at level %d (current value: %d)\n", i, current->value);
+      cprintf("  Reached the rightmost node at level %d (Current node: PID %d with vdeadline %d)\n", i, current->pid, current->value);
   }
 
   //* 2 - CHANCE FOR NODE TO BE INSERTED TO NEXT LEVEL
@@ -706,18 +717,21 @@ void slInsert(struct SkipList* skipList, int value, float p) {
   int newIdx = -1;
 
   // Look for nearest free node
-  for (int i = 1; i < NPROC + 1; i++) {
+  for (int i = 1; i <= NPROC; i++) {
     if (skipList->nodeList[i].valid == 0) newIdx = i;
   }
 
-  if (newIdx == -1) return; //! NodeList Array is Full!
-
+  if (newIdx == -1) {
+    cprintf("   Skip list is full, insert failed\n");
+    return; //! NodeList Array is Full!
+  }
   //* 4 - CREATE NEW NODE
   // ----------------------------------------------------
 
   struct SkipNode* newNode = &skipList->nodeList[newIdx];
 
   newNode->value = value;
+  newNode->pid = pid;
   newNode->valid = 1;
 
   //* 5 - UPDATE LINKS (OF NEW NODE, NEW BACKWARD, AND NEW FORWARD)
@@ -741,34 +755,37 @@ void slInsert(struct SkipList* skipList, int value, float p) {
       // update backward of new node
       newNode->backward[i] = currentIdx;
       
-      cprintf("  Inserted at level %d (forward pointer value: %d, backward pointer value: %d)\n", i, skipList->nodeList[newNode->forward[i]].value, skipList->nodeList[newNode->backward[i]].value);
+      cprintf("  Inserted at level %d (Forward node vdeadline: %d, Backward node vdeadline: %d)\n", i, skipList->nodeList[newNode->forward[i]].value, skipList->nodeList[newNode->backward[i]].value);
   }
 }
 
 // Function to search for a value in the sorted skip list
-struct SkipNode* slSearch(struct SkipList* skipList, int value) {
+struct SkipNode* slSearch(struct SkipList* skipList, int value, int pid) {
   struct SkipNode* current = &skipList->nodeList[0];
 
-  cprintf("Searching for value %d:\n", value);
+  cprintf("Searching for PID %d with vdeadline %d:\n", pid, value);
 
   for (int i = skipList->level; i >= 0; i--) {
-      cprintf("  Checking level %d (current value: %d)\n", i, current->value);
+      cprintf("  Checking level %d (Current node: PID %d with vdeadline)\n", i, current->pid, current->value);
 
       // Keep Looping WHILE:
       //    link to next forward exists (!= -1)
       //    linked forward node is valid (!= 0)
       //    value for forward is less than the searched value
+      //    associated pid is not the same
       while (current->forward[i] != -1 && skipList->nodeList[current->forward[i]].valid != 0 
           && skipList->nodeList[current->forward[i]].value < value) {
 
-          cprintf("    Moving right at level %d (current value: %d)\n", i, skipList->nodeList[current->forward[i]].value);
+          cprintf("    Moving right at level %d (Current node: PID %d with vdeadline %d)\n", i, skipList->nodeList[current->forward[i]].pid, skipList->nodeList[current->forward[i]].value);
           current = &skipList->nodeList[current->forward[i]];
       }
 
-      if (current->forward[i] != -1 && skipList->nodeList[current->forward[i]].valid != 0 
-          && skipList->nodeList[current->forward[i]].value == value) {
+      if (current->forward[i] != -1 
+          && skipList->nodeList[current->forward[i]].valid == 1 
+          && skipList->nodeList[current->forward[i]].value == value 
+          && skipList->nodeList[current->forward[i]].pid == pid) {
 
-          cprintf("Value %d found at level %d\n", value, i);
+          cprintf("PID %d with vdeadline %d found at level %d\n", pid, value, i);
           return &skipList->nodeList[current->forward[i]];
       }
 
@@ -777,49 +794,65 @@ struct SkipNode* slSearch(struct SkipList* skipList, int value) {
       // }
   }
 
-  cprintf("Value %d not found\n", value);
+  cprintf("PID %d with vdeadline %d not found\n", pid, value);
   return 0;
 }
 
 // Function to delete a node in the skip list
-void slDelete(struct SkipList* skipList, int value) {
-  // struct SkipNode* current = skipList->head;
+struct SkipNode* slDelete(struct SkipList* skipList, int value, int pid) {
+  struct SkipNode* current = &skipList->nodeList[0];
 
-  // cprintf("Searching for value %d:\n", value);
+  cprintf("Searching for PID %d with vdeadline %d:\n", pid, value);
 
-  // for (int i = skipList->level; i >= 0; i--) { // Start from highest level
-  //     cprintf("  Checking level %d (current value: %d)\n", i, current->value);
-  //     while (current->forward[i] != 0 && current->forward[i]->value < value) {
-  //         cprintf("    Moving right at level %d (current value: %d)\n", i, current->forward[i]->value);
-  //         current = current->forward[i];
-  //     }
+  for (int i = skipList->level; i >= 0; i--) {
+      cprintf("  Checking level %d (Current node: PID %d with vdeadline %d)\n", i, current->pid, current->value);
 
-  //     if (current->forward[i] != 0 && current->forward[i]->value == value) {
-  //         cprintf("Value %d to delete found at level %d\n", value, i); // Delete for each remaining levels
-  //         current = current->forward[i];
+      // Keep Looping WHILE:
+      //    link to next forward exists (!= -1)
+      //    linked forward node is valid (!= 0)
+      //    value for forward is less than the searched value
+      //    associated pid is not the same
+      while (current->forward[i] != -1 && skipList->nodeList[current->forward[i]].valid != 0 
+          && skipList->nodeList[current->forward[i]].value < value) {
 
-  //         for (int j = i; j >= 0; j--){
-  //             struct SkipNode* toDelete = current;
-  //             struct SkipNode* tempForward = current->forward[j];
-  //             struct SkipNode* tempBackward = current->backward[j];
-  //             tempForward->backward[j] = tempBackward;
-  //             tempBackward->forward[j] = tempForward;
-  //             toDelete->forward[j] = 0;
-  //             toDelete->backward[j] = 0;
+          cprintf("    Moving right at level %d (Current node: PID %d with vdeadline %d)\n", i, skipList->nodeList[current->forward[i]].pid, skipList->nodeList[current->forward[i]].value);
+          current = &skipList->nodeList[current->forward[i]];
+      }
 
-  //             //kfree(toDelete);
+      if (current->forward[i] != -1 
+          && skipList->nodeList[current->forward[i]].valid == 1 
+          && skipList->nodeList[current->forward[i]].value == value 
+          && skipList->nodeList[current->forward[i]].pid == pid) {
 
-  //             cprintf("Deleted from level %d (previous node now pointing to: %d, next node now pointing back to: %d)\n", j, tempBackward->forward[j]->value, tempForward->backward[j]->value);
-  //             cprintf("Deleted node pointing to garbage (forward pointer value: %d, backward pointer value: %d)\n", j, toDelete->forward[j]->value, toDelete->backward[j]->value);
-  //         }
+          cprintf("PID %d with vdeadline %d to delete found at level %d\n", pid, value, i); 
+          current = &skipList->nodeList[current->forward[i]];
 
-  //         cprintf("Value %d deleted successfully\n", value);
+          // Delete for each remaining levels
+          for (int j = i; j >= 0; j--){
+              struct SkipNode *tempForward = &skipList->nodeList[current->forward[j]];
+              struct SkipNode *tempBackward = &skipList->nodeList[current->backward[j]];
+              tempForward->backward[j] = current->backward[j];
+              tempBackward->forward[j] = current->forward[j];
 
-  //         break;
-  //     }
-  // }
+              current->forward[j] = -1;
+              current->backward[j] = -1;
+              current->valid = 0;
 
-  // cprintf("Value %d not found\n", value);
+              cprintf("Deleted from level %d (Back node node now pointing to: %d, Forward node now pointing back to: %d)\n", j, skipList->nodeList[tempBackward->forward[j]].value, skipList->nodeList[tempForward->backward[j]].value);
+          }
+
+           cprintf("PID %d with vdeadline %d deleted successfully\n", pid, value);
+
+           return current;
+      }
+
+      // if (i > 0) { // Just to verify if the downward functionality of the skip list works.
+      //     cprintf("  Downward next value at level %d: %d\n", i-1, &skipList->nodeList[current->forward[i-1]].value);
+      // }
+  }
+
+  cprintf("PID %d with vdeadline %d to delete not found\n", pid, value);
+  return 0;
 }
 
 // Function to print the entire skip list
@@ -829,8 +862,8 @@ void printSkipList(struct SkipList* skipList) {
       struct SkipNode* head = &skipList->nodeList[0];
       struct SkipNode* current = &skipList->nodeList[head->forward[i]];
       cprintf("Level %d: ", i);
-      while (current->valid != 0 && current->forward[i] != -1) {
-          cprintf("%d -> ", current->value);
+      while (current->valid == 1 && current->value != 0) {
+          cprintf("(%d) %d -> ", current->pid, current->value);
           current = &skipList->nodeList[current->forward[i]];
       }
       cprintf("0\n");
