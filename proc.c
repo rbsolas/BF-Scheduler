@@ -419,13 +419,21 @@ scheduler(void)
       }
     }
 
-    struct SkipNode procToSched = sl->nodeList[1]; // first node
+    printSkipList(sl);
+
+    struct SkipNode head = sl->nodeList[0];
+    struct SkipNode procToSched = sl->nodeList[head.forward[0]]; // first node
+
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
       if (procToSched.pid == p->pid) {
         c->proc = p;
         break;
       }
     }
+
+    ///
+    /// NOTE: At this point, p can be a null entry; Need to short circuit when no processes are in the ptable ///
+    ///
 
     // Switch to chosen process.  It is the process's job
     // to release ptable.lock and then reacquire it
@@ -699,7 +707,7 @@ unsigned int random(int max) {
 // Function to up a level by chance for a new element
 int slUpLevel(float p) {
   int level = 0;
-  while ((random(100) / 100.0) < p && level < BFS_NICE_LAST_LEVEL) {
+  while ((random(100) / 100.0) < p && level < MAX_SKIPLIST_LEVEL) {
       level++;
   }
   return level;
@@ -874,9 +882,12 @@ struct SkipNode* slDelete(struct SkipList* skipList, int value, int pid) {
               tempForward->backward[j] = current->backward[j];
               tempBackward->forward[j] = current->forward[j];
 
+              // current->pid = 0;
+              // current->value = 0;
               current->forward[j] = -1;
               current->backward[j] = -1;
               current->valid = 0;
+
 
               cprintf("Deleted from level %d (Back node node now pointing to: %d, Forward node now pointing back to: %d)\n", j, skipList->nodeList[tempBackward->forward[j]].value, skipList->nodeList[tempForward->backward[j]].value);
           }
