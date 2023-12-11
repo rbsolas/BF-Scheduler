@@ -116,10 +116,10 @@ found:
   p->niceness = 0;
 
   // TODO: NEED TO UPDATE VDEADLINE WHEN QUANTUM IS FINISHED
-  int prioratio = 1;
-  if (prioratio != BFS_NICE_FIRST_LEVEL) prioratio = p->niceness;
+  int prioRatio = p->niceness + 1;
+  // if (prioRatio != BFS_NICE_FIRST_LEVEL) prioRatio = p->niceness;
 
-  p->vdeadline = ticks + prioratio * BFS_DEFAULT_QUANTUM;
+  p->vdeadline = ticks + prioRatio * BFS_DEFAULT_QUANTUM;
 
   return p;
 }
@@ -376,8 +376,7 @@ void schedlog(int n) {
   schedlog_lasttick = ticks + n;
 }
 
-
-int min_vdeadline = MAX_INT;
+// int min_vdeadline = MAX_INT;
 struct SkipList *sl = 0;
 
 void
@@ -411,8 +410,11 @@ scheduler(void)
       }
       
       if (slSearch(sl, p->vdeadline, p->pid) == 0) { // Process is runnable and not yet in skip list
-        if (p->vdeadline < min_vdeadline) min_vdeadline = p->vdeadline;
-        if (p->ticks_left == 0) p->vdeadline = ticks + ~~~prioRatio[p->niceness]~~~ * BFS_DEFAULT_QUANTUM; // not yet working; prioratio not yet seen
+        // if (p->vdeadline < min_vdeadline) min_vdeadline = p->vdeadline;
+        if (p->ticks_left == 0) { // Process fully consumes quantum; Decrease priority(?)
+          int prioRatio = p->niceness + 1;
+          p->vdeadline = ticks + prioRatio * BFS_DEFAULT_QUANTUM; // not yet working; prioratio not yet seen
+        }
         slInsert(sl, p->vdeadline, p->pid, CHANCE);
       }
     }
@@ -753,7 +755,10 @@ void slInsert(struct SkipList* skipList, int value, int pid, float p) {
 
   // Look for nearest free node
   for (int i = 1; i <= NPROC; i++) {
-    if (skipList->nodeList[i].valid == 0) newIdx = i;
+    if (skipList->nodeList[i].valid == 0) {
+      newIdx = i;
+      break;
+    }
   }
 
   if (newIdx == -1) {

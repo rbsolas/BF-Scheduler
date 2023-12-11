@@ -124,7 +124,8 @@ int sys_nicefork(void) {
 //! Temporary Sycall
 int sys_skippers(void)
 {
-    struct SkipList* skipList = initSkipList();
+    struct SkipList* skipList = 0;
+    skipList = initSkipList(skipList);
 
     /// TEST INSERT ///
     cprintf("TEST INSERT\n");
