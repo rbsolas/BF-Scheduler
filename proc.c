@@ -666,7 +666,7 @@ struct SkipList* initSkipList(struct SkipList *skipList) { // struct SkipList* s
     skipList->nodeList[0].valid = 1;   // Valid bit for sentinel should always be true
   
     // Sentinel is alone and sad, no forward and backward neighbors
-    for(int i = 0; i <= BFS_NICE_LAST_LEVEL; i++) { 
+    for(int i = 0; i <= MAX_SKIPLIST_LEVEL - 1; i++) { 
       skipList->nodeList[0].forward[i] = -1;
       skipList->nodeList[0].backward[i] = -1;
     }
