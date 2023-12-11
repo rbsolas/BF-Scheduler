@@ -213,7 +213,7 @@ struct SkipList {
 };
 
 
-struct SkipList* initSkipList();    // Function to initialize a new sorted skip list
+struct SkipList* initSkipList(struct SkipList *skipList);    // Function to initialize a new sorted skip list
 int slUpLevel(float p);               // Function to up a level by chance for a new element
 void slInsert(struct SkipList* skipList, int value, int pid, float p);     // Function to insert a value into the sorted skip list
 struct SkipNode* slSearch(struct SkipList* skipList, int value, int pid);  // Function to search for a value in the sorted skip list
