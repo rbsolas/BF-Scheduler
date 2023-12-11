@@ -648,9 +648,9 @@ procdump(void)
 
 
 // Function to initialize a new sorted skip list
-struct SkipList* initSkipList(lst) { // struct SkipList* skipList
-  if (lst == 0) {
-    struct SkipList* skipList = (struct SkipList*)kalloc();
+struct SkipList* initSkipList(struct SkipList *skipList) { // struct SkipList* skipList
+  if (skipList == 0) {
+    skipList = (struct SkipList*)kalloc();
     skipList->level = 0;
   
     // Initialize head node kept at index 0
@@ -672,7 +672,7 @@ struct SkipList* initSkipList(lst) { // struct SkipList* skipList
     return skipList;
   }
 
-  return lst;
+  return skipList;
 }
 
 unsigned int seed = SEED;
