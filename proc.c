@@ -409,9 +409,12 @@ scheduler(void)
       }
     }
 
-    struct SkipNode *procToSched = slSearch(sl, min_vdeadline, p->pid); 
+    struct SkipNode procToSched = sl->nodeList[1]; // first node
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if (procToSched->pid == p->pid) c->proc = p;
+      if (procToSched.pid == p->pid) {
+        c->proc = p;
+        break;
+      }
     }
 
     // Switch to chosen process.  It is the process's job
