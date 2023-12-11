@@ -401,6 +401,10 @@ scheduler(void)
         continue;
     */
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if (p->pid == 0) { // null (empty) processes
+        continue;
+      }
+      
       if (p->state != RUNNABLE) {
         slDelete(sl, p->vdeadline, p->pid);
         continue;
