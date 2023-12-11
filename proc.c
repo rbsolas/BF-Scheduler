@@ -378,12 +378,12 @@ void schedlog(int n) {
 
 
 int min_vdeadline = MAX_INT;
-struct SkipList *sl;
+struct SkipList *sl = 0;
 
 void
 scheduler(void)
 {
-  sl = initSkipList();
+  sl = initSkipList(sl); // not tested
 
   struct proc *p;
   struct cpu *c = mycpu();
@@ -648,27 +648,31 @@ procdump(void)
 
 
 // Function to initialize a new sorted skip list
-struct SkipList* initSkipList() { // struct SkipList* skipList
-  struct SkipList* skipList = (struct SkipList*)kalloc();
-  skipList->level = 0;
-
-  // Initialize head node kept at index 0
-  skipList->nodeList[0].value = -1;
-  skipList->nodeList[0].pid = -1;
-  skipList->nodeList[0].valid = 1;   // Valid bit for sentinel should always be true
-
-  // Sentinel is alone and sad, no forward and backward neighbors
-  for(int i = 0; i <= BFS_NICE_LAST_LEVEL; i++) { 
-    skipList->nodeList[0].forward[i] = -1;
-    skipList->nodeList[0].backward[i] = -1;
+struct SkipList* initSkipList(lst) { // struct SkipList* skipList
+  if (lst == 0) {
+    struct SkipList* skipList = (struct SkipList*)kalloc();
+    skipList->level = 0;
+  
+    // Initialize head node kept at index 0
+    skipList->nodeList[0].value = -1;
+    skipList->nodeList[0].pid = -1;
+    skipList->nodeList[0].valid = 1;   // Valid bit for sentinel should always be true
+  
+    // Sentinel is alone and sad, no forward and backward neighbors
+    for(int i = 0; i <= BFS_NICE_LAST_LEVEL; i++) { 
+      skipList->nodeList[0].forward[i] = -1;
+      skipList->nodeList[0].backward[i] = -1;
+    }
+  
+    // Set valid bit for all other nodes to 0 (empty list)
+    for (int i = 1; i <= NPROC; i++) {
+        skipList->nodeList[i].valid = 0;
+    }
+  
+    return skipList;
   }
 
-  // Set valid bit for all other nodes to 0 (empty list)
-  for (int i = 1; i <= NPROC; i++) {
-      skipList->nodeList[i].valid = 0;
-  }
-
-  return skipList;
+  return lst;
 }
 
 unsigned int seed = SEED;
