@@ -401,11 +401,15 @@ scheduler(void)
         continue;
     */
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if (p->state == RUNNABLE && (slSearch(sl, p->vdeadline, p->pid) == 0)) { // Process is runnable and not yet in skip list
+      if (p->state != RUNNABLE) {
+        slDelete(sl, p->vdeadline, p->pid);
+        continue;
+      }
+      
+      if (slSearch(sl, p->vdeadline, p->pid) == 0) { // Process is runnable and not yet in skip list
+        if (p->vdeadline < min_vdeadline) min_vdeadline = p->vdeadline;
+        if (p->ticks_left == 0) p->vdeadline = ticks + ~~~prioRatio[p->niceness]~~~ * BFS_DEFAULT_QUANTUM; // not yet working; prioratio not yet seen
         slInsert(sl, p->vdeadline, p->pid, CHANCE);
-        if (p->vdeadline < min_vdeadline) min_vdeadline = p->vdeadline; 
-      } else { // Process is not runnable (sleeping, etc.); Idk if sufficient for 'exiting' processes
-        slDelete(sl, p->vdeadline, p->pid); // slDelete may not find the process; Make sure to catch that
       }
     }
 
