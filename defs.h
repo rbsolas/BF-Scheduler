@@ -19,6 +19,7 @@ void            bwrite(struct buf*);
 
 // console.c
 void            consoleinit(void);
+void            dbgprintf(int, char*, ...);
 void            cprintf(char*, ...);
 void            consoleintr(int(*)(void));
 void            panic(char*) __attribute__((noreturn));
@@ -200,8 +201,8 @@ struct SkipNode {
     int value;
     int pid;
     // instead of keeping an array of pointers, we just store their array indices
-    int forward[BFS_NICE_LAST_LEVEL + 1];
-    int backward[BFS_NICE_LAST_LEVEL + 1]; // note: doubly linked
+    int forward[MAX_SKIPLIST_LEVEL];
+    int backward[MAX_SKIPLIST_LEVEL]; // note: doubly linked
     int valid;  // 0 = Node is empty
 };
 
