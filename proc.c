@@ -9,7 +9,7 @@
 
 // SETTING ANY OF THESE LINES TO 1 WILL SHOW DEBUG PRINT STATEMENTS
 #define SKIPLIST_DBG_LINES 0
-#define SCHEDULER_DBG_LINES 0
+#define SCHEDULER_DBG_LINES 1
 
 struct {
   struct spinlock lock;
@@ -379,13 +379,12 @@ void schedlog(int n) {
 }
 
 // int min_vdeadline = MAX_INT;
-struct SkipList *sl = 0;
 
 void
 scheduler(void)
 {
-  sl = initSkipList(sl); // not tested
-
+  struct SkipList *sl = initSkipList();
+  
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
@@ -394,139 +393,264 @@ scheduler(void)
     // Enable interrupts on this processor.
     sti();
 
-    // Loop over process table looking for process to run.
     acquire(&ptable.lock);
-      /*
+
+    // Populate/Update skip list with runnable processes
+    // Choose process to schedule
+    // Update vdeadline if a process exits or consumes its quantum
+
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
-        continue;
-    */
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      //cprintf("time: %d\n", ticks);
-      //if (p->pid != 0) cprintf("\n PID: %d, STATE: %d\n", p->pid, p->state);
-      if (p->pid == 0) { // null (empty) processes
-        continue;
+      switch (p->state) {
+        case UNUSED:
+          continue;
+        case RUNNABLE:
+          dbgprintf(SCHEDULER_DBG_LINES, "[%d] %d\n", p->pid, p->state);
+          // ADD RUNNABLE PROCS TO SKIPLIST
+          // We assume that possible duplicate would already be invalid upon slInsert
+          if (slSearch(sl, p->vdeadline, p->pid) == 0) 
+            slInsert(sl, p->vdeadline, p->pid, CHANCE);
+          break;
+        default:
+          dbgprintf(SCHEDULER_DBG_LINES, "[%d] %d\n", p->pid, p->state);
+          // DELETE NON RUNNABLE PROCS FROM SKIPLIST
+          if (slSearch(sl, p->vdeadline, p->pid) != 0) { // Non-runnable procs that are in skip list
+            slDelete(sl, p->vdeadline, p->pid);
+          }
+          break;
       }
-      
-      if (p->state != RUNNABLE) {
-        if (p->state == RUNNING && p->ticks_left <= 0) { // Process fully consumes quantum; Decrease priority(?)
-          dbgprintf(SCHEDULER_DBG_LINES, "QUANTUM CONSUMED\n");
-          // Remove from skipList
-          slDelete(sl, p->vdeadline, p->pid);
-
-          // Update vdeadline
-          int prioRatio = p->niceness + 1;
-          //cprintf("time: %d\n", ticks);
-          p->vdeadline = ticks + prioRatio * BFS_DEFAULT_QUANTUM; // not yet working; prioratio not yet seen
-         
-          // Reinsert (dapat nag-uupdate na yung bwisit na deadline)
-          slInsert(sl, p->vdeadline, p->pid, CHANCE);
-        } else {
-          slDelete(sl, p->vdeadline, p->pid);
-        }
-        continue;
-      }
-      
-      if (slSearch(sl, p->vdeadline, p->pid) == 0) { // Process is runnable and not yet in skip list
-        // if (p->vdeadline < min_vdeadline) min_vdeadline = p->vdeadline;
-
-        dbgprintf(SCHEDULER_DBG_LINES, "NEW PROCESS RUNNABLE FOUND\n");
-        slInsert(sl, p->vdeadline, p->pid, CHANCE);
-      } //else {
-      //   if (p->ticks_left <= 0) { // Process fully consumes quantum; Decrease priority(?)
-      //     cprintf("QUANTUM CONSUMED\n");
-      //     // Remove from skipList
-      //     slDelete(sl, p->vdeadline, p->pid);
-
-      //     // Update vdeadline
-      //     int prioRatio = p->niceness + 1;
-      //     //cprintf("time: %d\n", ticks);
-      //     p->vdeadline = ticks + prioRatio * BFS_DEFAULT_QUANTUM; // not yet working; prioratio not yet seen
-         
-      //     // Reinsert (dapat nag-uupdate na yung bwisit na deadline)
-      //     slInsert(sl, p->vdeadline, p->pid, CHANCE);
-      //   }
-      // }
     }
 
     if (SCHEDULER_DBG_LINES) printSkipList(sl);
+    
+    struct SkipNode* head = &sl->nodeList[0];
+    struct SkipNode* firstNode = &sl->nodeList[head->forward[0]]; // First node (pointed to after head node)
+    
+    dbgprintf(SCHEDULER_DBG_LINES, "FIRSTNODE valid: %d, pid: %d, vdeadline: %d\n", firstNode->valid,  firstNode->pid, firstNode->value);
 
-    struct SkipNode head = sl->nodeList[0];
-    struct SkipNode procToSched = sl->nodeList[head.forward[0]]; // first node (pointed to after head node)
-   //cprintf("PID prctosched: %d\n", procToSched.pid);
+    // Delete the next proc from skiplist
+    slDelete(sl, firstNode->value, firstNode->pid);
 
-   //cprintf("PID: %d\n", procToSched.pid);
-    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if (p->state != RUNNABLE) {
-        continue;
-      }
+    struct proc* nextProc = &ptable.proc[firstNode->pid - 1]; // PID n corresponds to index n - 1
 
+    dbgprintf(SCHEDULER_DBG_LINES, "NEXTPROC pid: %d, vdeadline: %d ticks left: %d\n", nextProc->pid,  nextProc->vdeadline, nextProc->ticks_left);
 
+    // Switch to chosen process.  It is the process's job
+    // to release ptable.lock and then reacquire it
+    // before jumping back to us.
+    c->proc = nextProc;
+    switchuvm(nextProc);
+    nextProc->state = RUNNING;
+    nextProc->ticks_left = BFS_DEFAULT_QUANTUM;
 
-      if (procToSched.pid == p->pid) {
-        //cprintf("PID: %d\n", p->pid);
-        //cprintf("deadline: %d\n", p->vdeadline);
-        //cprintf("state: %d\n", p->state);
+    if (schedlog_active) {
+      if (ticks > schedlog_lasttick) {
+        schedlog_active = 0;
+      } else {
+          cprintf("%d", ticks);
 
+          struct proc *pp;
+          int highest_idx = -1;
 
-       // cprintf("STATE: %d\n", p->state);
-        c->proc = p;
-        // Switch to chosen process.  It is the process's job
-        // to release ptable.lock and then reacquire it
-        // before jumping back to us.
-        // c->proc = p;
-        switchuvm(p);
-        p->state = RUNNING;
-
-        p->ticks_left = BFS_DEFAULT_QUANTUM;
-
-        if (schedlog_active) {
-          if (ticks > schedlog_lasttick) {
-            schedlog_active = 0;
-          } else {
-              cprintf("%d", ticks);
-
-              struct proc *pp;
-              int highest_idx = -1;
-
-              for (int k = 0; k < NPROC; k++) {
-                pp = &ptable.proc[k];
-                if (pp->state != UNUSED) {
-                  highest_idx = k;
-                }
-              }
-
-            for (int k = 0; k <= highest_idx; k++) {
-              pp = &ptable.proc[k];
-              // Reference: <tick>|[<PID>]<process name>:<state>:<nice>(<maxlevel>)(<deadline>)(<quantum>)
-              cprintf(" | [%d] %s:%d: <n>(<l>)(<dl>)(<q>)", k, pp->name, pp->state); // NOTE: REMOVE SPACES
-
-              /*
-              if (pp->state == UNUSED) cprintf(" | [%d] ---:0", k);
-              else if (pp->state == RUNNING) cprintf(" | [%d]*%s:%d", k, pp->name, pp->state);
-              else cprintf(" | [%d] %s:%d", k, pp->name, pp->state);
-              */
+          for (int k = 0; k < NPROC; k++) {
+            pp = &ptable.proc[k];
+            if (pp->state != UNUSED) {
+              highest_idx = k;
             }
-            cprintf("\n");
           }
+
+        for (int k = 0; k <= highest_idx; k++) {
+          pp = &ptable.proc[k];
+          // Reference: <tick>|[<PID>]<process name>:<state>:<nice>(<maxlevel>)(<deadline>)(<quantum>)
+          cprintf(" | [%d] %s:%d: <n>(<l>)(<dl>)(<q>)", k, pp->name, pp->state); // NOTE: REMOVE SPACES
+
+          /*
+          if (pp->state == UNUSED) cprintf(" | [%d] ---:0", k);
+          else if (pp->state == RUNNING) cprintf(" | [%d]*%s:%d", k, pp->name, pp->state);
+          else cprintf(" | [%d] %s:%d", k, pp->name, pp->state);
+          */
         }
-
-        swtch(&(c->scheduler), p->context);
-        switchkvm();
-
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
-        break;
+        cprintf("\n");
       }
     }
 
+    swtch(&(c->scheduler), nextProc->context);
+    switchkvm();
 
+    // Process is done running for now.
+    // It should have changed its p->state before coming back.
+    c->proc = 0;
 
-    //cprintf("checkmate\n");
     release(&ptable.lock);
+    
+    /*
+    // Loop over process table looking for process to run
+    for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+      if(p->state != RUNNABLE)
+        continue;
+
+      // Switch to chosen process.  It is the process's job
+      // to release ptable.lock and then reacquire it
+      // before jumping back to us.
+      c->proc = p;
+      switchuvm(p);
+      p->state = RUNNING;
+
+      swtch(&(c->scheduler), p->context);
+      switchkvm();
+
+      // Process is done running for now.
+      // It should have changed its p->state before coming back.
+      c->proc = 0;
+    }
+    */
   }
 }
+
+// void
+// schedulerOld(void)
+// {
+//   struct SkipList* sl = initSkipList(sl);
+
+//   struct proc *p;
+//   struct cpu *c = mycpu();
+//   c->proc = 0;
+  
+//   for(;;){
+//     // Enable interrupts on this processor.
+//     sti();
+
+//     // Loop over process table looking for process to run.
+//     acquire(&ptable.lock);
+//       /*
+//     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+//       if(p->state != RUNNABLE)
+//         continue;
+//     */
+//     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+//       //cprintf("time: %d\n", ticks);
+//       //if (p->pid != 0) cprintf("\n PID: %d, STATE: %d\n", p->pid, p->state);
+//       if (p->pid == 0) { // null (empty) processes
+//         continue;
+//       }
+      
+//       if (p->state != RUNNABLE) {
+//         if (p->state == RUNNING && p->ticks_left <= 0) { // Process fully consumes quantum; Decrease priority(?)
+//           dbgprintf(SCHEDULER_DBG_LINES, "QUANTUM CONSUMED\n");
+//           // Remove from skipList
+//           slDelete(sl, p->vdeadline, p->pid);
+
+//           // Update vdeadline
+//           int prioRatio = p->niceness + 1;
+//           //cprintf("time: %d\n", ticks);
+//           p->vdeadline = ticks + prioRatio * BFS_DEFAULT_QUANTUM;
+         
+//           // i am in your walls
+//           // Reinsert (dapat nag-uupdate na yung bwisit na deadline)
+//           slInsert(sl, p->vdeadline, p->pid, CHANCE);
+//         } else {
+//           slDelete(sl, p->vdeadline, p->pid);
+//         }
+//         continue;
+//       }
+      
+//       if (slSearch(sl, p->vdeadline, p->pid) == 0) { // Process is runnable and not yet in skip list
+//         // if (p->vdeadline < min_vdeadline) min_vdeadline = p->vdeadline;
+
+//         dbgprintf(SCHEDULER_DBG_LINES, "NEW PROCESS RUNNABLE FOUND\n");
+//         slInsert(sl, p->vdeadline, p->pid, CHANCE);
+//       } //else {
+//       //   if (p->ticks_left <= 0) { // Process fully consumes quantum; Decrease priority(?)
+//       //     cprintf("QUANTUM CONSUMED\n");
+//       //     // Remove from skipList
+//       //     slDelete(sl, p->vdeadline, p->pid);
+
+//       //     // Update vdeadline
+//       //     int prioRatio = p->niceness + 1;
+//       //     //cprintf("time: %d\n", ticks);
+//       //     p->vdeadline = ticks + prioRatio * BFS_DEFAULT_QUANTUM; // not yet working; prioratio not yet seen
+         
+//       //     // Reinsert (dapat nag-uupdate na yung bwisit na deadline)
+//       //     slInsert(sl, p->vdeadline, p->pid, CHANCE);
+//       //   }
+//       // }
+//     }
+
+//     if (SCHEDULER_DBG_LINES) printSkipList(sl);
+
+//     struct SkipNode head = sl->nodeList[0];
+//     struct SkipNode firstNode = sl->nodeList[head.forward[0]]; // first node (pointed to after head node)
+//    //cprintf("PID prctosched: %d\n", firstNode.pid);
+
+//    //cprintf("PID: %d\n", firstNode.pid);
+//     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+//       if (p->state != RUNNABLE) {
+//         continue;
+//       }
+
+//       if (firstNode.pid == p->pid) {
+//         //cprintf("PID: %d\n", p->pid);
+//         //cprintf("deadline: %d\n", p->vdeadline);
+//         //cprintf("state: %d\n", p->state);
+
+
+//        // cprintf("STATE: %d\n", p->state);
+//         c->proc = p;
+//         // Switch to chosen process.  It is the process's job
+//         // to release ptable.lock and then reacquire it
+//         // before jumping back to us.
+//         // c->proc = p;
+//         switchuvm(p);
+//         p->state = RUNNING;
+
+//         p->ticks_left = BFS_DEFAULT_QUANTUM;
+
+//         if (schedlog_active) {
+//           if (ticks > schedlog_lasttick) {
+//             schedlog_active = 0;
+//           } else {
+//               cprintf("%d", ticks);
+
+//               struct proc *pp;
+//               int highest_idx = -1;
+
+//               for (int k = 0; k < NPROC; k++) {
+//                 pp = &ptable.proc[k];
+//                 if (pp->state != UNUSED) {
+//                   highest_idx = k;
+//                 }
+//               }
+
+//             for (int k = 0; k <= highest_idx; k++) {
+//               pp = &ptable.proc[k];
+//               // Reference: <tick>|[<PID>]<process name>:<state>:<nice>(<maxlevel>)(<deadline>)(<quantum>)
+//               cprintf(" | [%d] %s:%d: <n>(<l>)(<dl>)(<q>)", k, pp->name, pp->state); // NOTE: REMOVE SPACES
+
+//               /*
+//               if (pp->state == UNUSED) cprintf(" | [%d] ---:0", k);
+//               else if (pp->state == RUNNING) cprintf(" | [%d]*%s:%d", k, pp->name, pp->state);
+//               else cprintf(" | [%d] %s:%d", k, pp->name, pp->state);
+//               */
+//             }
+//             cprintf("\n");
+//           }
+//         }
+
+//         swtch(&(c->scheduler), p->context);
+//         switchkvm();
+
+//         // Process is done running for now.
+//         // It should have changed its p->state before coming back.
+//         c->proc = 0;
+//         break;
+//       }
+//     }
+
+
+
+//     //cprintf("checkmate\n");
+//     release(&ptable.lock);
+//   }
+// }
 
 // Enter scheduler.  Must hold only ptable.lock
 // and have changed proc->state. Saves and restores
@@ -560,6 +684,14 @@ yield(void)
 {
   acquire(&ptable.lock);  //DOC: yieldlock
   myproc()->state = RUNNABLE;
+
+  // Update vdeadline
+  if (myproc()->ticks_left <= 0) {
+    dbgprintf(SCHEDULER_DBG_LINES, "QUANTUM CONSUMED, UPDATE VDEADLINE\n");
+    int prioRatio = myproc()->niceness + 1;
+    myproc()->vdeadline = ticks + prioRatio * BFS_DEFAULT_QUANTUM;
+  }
+
   sched();
   release(&ptable.lock);
 }
@@ -711,29 +843,26 @@ procdump(void)
 
 
 // Function to initialize a new sorted skip list
-struct SkipList* initSkipList(struct SkipList *skipList) { // struct SkipList* skipList
-  if (skipList == 0) {
-    skipList = (struct SkipList*)kalloc();
-    skipList->level = 0;
-  
-    // Initialize head node kept at index 0
-    skipList->nodeList[0].value = -1;
-    skipList->nodeList[0].pid = -1;
-    skipList->nodeList[0].valid = 1;   // Valid bit for sentinel should always be true
-  
-    // Sentinel is alone and sad, no forward and backward neighbors
-    for(int i = 0; i < MAX_SKIPLIST_LEVEL; i++) { 
-      skipList->nodeList[0].forward[i] = -1;
-      skipList->nodeList[0].backward[i] = -1;
-    }
-  
-    // Set valid bit for all other nodes to 0 (empty list)
-    for (int i = 1; i <= NPROC; i++) {
-        skipList->nodeList[i].valid = 0;
-    }
-  
-    return skipList;
+struct SkipList* initSkipList() { // struct SkipList* skipList
+ struct SkipList* skipList = (struct SkipList*)kalloc();
+  skipList->level = 0;
+
+  // Initialize head node kept at index 0
+  skipList->nodeList[0].value = -1;
+  skipList->nodeList[0].pid = -1;
+  skipList->nodeList[0].valid = 1;   // Valid bit for sentinel should always be true
+
+  // Sentinel is alone and sad, no forward and backward neighbors
+  for(int i = 0; i < MAX_SKIPLIST_LEVEL; i++) { 
+    skipList->nodeList[0].forward[i] = -1;
+    skipList->nodeList[0].backward[i] = -1;
   }
+
+  // Set valid bit for all other nodes to 0 (empty list)
+  for (int i = 1; i <= NPROC; i++) {
+      skipList->nodeList[i].valid = 0;
+  }
+  
 
   return skipList;
 }
