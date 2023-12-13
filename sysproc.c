@@ -122,102 +122,101 @@ int sys_nicefork(void) {
 }
 
 //! Temporary Sycall
-int sys_skippers(void)
-{
-    struct SkipList* skipList = 0;
-    skipList = initSkipList(skipList);
+// int sys_skippers(void)
+// {
+//     struct SkipList* skipList = 0;
 
-    /// TEST INSERT ///
-    cprintf("TEST INSERT\n");
+//     /// TEST INSERT ///
+//     cprintf("TEST INSERT\n");
 
-    slInsert(skipList, 30, 0, CHANCE);
-    //printSkipList(skipList);
+//     slInsert(30, 0, CHANCE);
+//     //printSkipList(skipList);
 
-    slInsert(skipList, 60, 1, CHANCE);
-    //printSkipList(skipList);
+//     slInsert(60, 1, CHANCE);
+//     //printSkipList(skipList);
 
-    slInsert(skipList, 90, 2, CHANCE);
-    //printSkipList(skipList);
+//     slInsert(90, 2, CHANCE);
+//     //printSkipList(skipList);
 
-    slInsert(skipList, 40, 3, CHANCE);
-    //printSkipList(skipList);
+//     slInsert(40, 3, CHANCE);
+//     //printSkipList(skipList);
 
-    slInsert(skipList, 20, 4, CHANCE);
-    //printSkipList(skipList);
+//     slInsert(20, 4, CHANCE);
+//     //printSkipList(skipList);
 
-    slInsert(skipList, 80, 5, CHANCE);
-    //printSkipList(skipList);
+//     slInsert(80, 5, CHANCE);
+//     //printSkipList(skipList);
 
-    slInsert(skipList, 70, 6, CHANCE);
-    //printSkipList(skipList);
+//     slInsert(70, 6, CHANCE);
+//     //printSkipList(skipList);
 
-    slInsert(skipList, 50, 7, CHANCE);
-    //printSkipList(skipList);
+//     slInsert(50, 7, CHANCE);
+//     //printSkipList(skipList);
 
-    slInsert(skipList, 10, 8, CHANCE);
-    slInsert(skipList, 45, 9, CHANCE);
-    slInsert(skipList, 85, 10, CHANCE);
-    slInsert(skipList, 95, 11, CHANCE);
+//     slInsert(10, 8, CHANCE);
+//     slInsert(45, 9, CHANCE);
+//     slInsert(85, 10, CHANCE);
+//     slInsert(95, 11, CHANCE);
 
-    printSkipList(skipList);
+//     printSkipList();
 
-    // Search for values
-    /*
-    struct SkipNode* result1 = slSearch(skipList, 0, 0); // Not in list
-    struct SkipNode* result2 = slSearch(skipList, 20, 4);
-    struct SkipNode* result3 = slSearch(skipList, 85, 10);
-    struct SkipNode* result4 = slSearch(skipList, 100, 11); // Not in list
+//     // Search for values
+//     /*
+//     struct SkipNode* result1 = slSearch( 0, 0); // Not in list
+//     struct SkipNode* result2 = slSearch( 20, 4);
+//     struct SkipNode* result3 = slSearch( 85, 10);
+//     struct SkipNode* result4 = slSearch( 100, 11); // Not in list
 
-    struct SkipNode* results[] = {result1, result2, result3, result4};
-    int values[] = {0, 20, 85, 100};
+//     struct SkipNode* results[] = {result1, result2, result3, result4};
+//     int values[] = {0, 20, 85, 100};
 
-    for (int i = 0; i < sizeof(results) / sizeof(results[0]); i++) {
-        if (results[i] != 0) {
-            cprintf("Value %d found\n", results[i]->value);
-        } else {
-            cprintf("Value %d not found\n", values[i]);
-        }
-    }
-    */
+//     for (int i = 0; i < sizeof(results) / sizeof(results[0]); i++) {
+//         if (results[i] != 0) {
+//             cprintf("Value %d found\n", results[i]->value);
+//         } else {
+//             cprintf("Value %d not found\n", values[i]);
+//         }
+//     }
+//     */
 
-    /// TEST DELETE ///
-    cprintf("\n");
-    cprintf("TEST DELETE\n");
-    slDelete(skipList, 90, 2);
-    printSkipList(skipList);
+//     /// TEST DELETE ///
+//     cprintf("\n");
+//     cprintf("TEST DELETE\n");
+//     slDelete( 90, 2);
+//     printSkipList(skipList);
 
-    slDelete(skipList, 20, 4);
-    printSkipList(skipList);
+//     slDelete( 20, 4);
+//     printSkipList(skipList);
 
-    slDelete(skipList, 10, 8);
-    printSkipList(skipList);
+//     slDelete( 10, 8);
+//     printSkipList(skipList);
 
-    /// TEST DELETE NONEXISTENT NODE ///
-    cprintf("\n");
-    cprintf("TEST DELETE NONEXISTENT NODE\n");
-    slDelete(skipList, 20, 4); // Should fail
+//     /// TEST DELETE NONEXISTENT NODE ///
+//     cprintf("\n");
+//     cprintf("TEST DELETE NONEXISTENT NODE\n");
+//     slDelete( 20, 4); // Should fail
 
-    /// TEST SEARCH ///
-    cprintf("\n");
-    cprintf("TEST SEARCH\n");
-    cprintf("Searching node: %d\n", slSearch(skipList, 85, 10));
-    cprintf("Searching node: %d\n", slSearch(skipList, 95, 11));
+//     /// TEST SEARCH ///
+//     cprintf("\n");
+//     cprintf("TEST SEARCH\n");
+//     cprintf("Searching node: %d\n", slSearch( 85, 10));
+//     cprintf("Searching node: %d\n", slSearch( 95, 11));
 
-    /// TEST SEARCH DELETED NODE ///
-    cprintf("\n");
-    cprintf("TEST SEARCH DELETED NODE\n");
-    cprintf("Searching node: %d\n", slSearch(skipList, 20, 4)); // Not in list; Should return 0
+//     /// TEST SEARCH DELETED NODE ///
+//     cprintf("\n");
+//     cprintf("TEST SEARCH DELETED NODE\n");
+//     cprintf("Searching node: %d\n", slSearch( 20, 4)); // Not in list; Should return 0
 
-    /// TEST SEARCH NONEXISTENT NODE /// 
-    cprintf("\n");
-    cprintf("TEST SEARCH NONEXISTENT NODE\n");
-    cprintf("Searching node: %d\n", slSearch(skipList, 1, 3)); // Not in list (different vdeadline); Should return 0
+//     /// TEST SEARCH NONEXISTENT NODE /// 
+//     cprintf("\n");
+//     cprintf("TEST SEARCH NONEXISTENT NODE\n");
+//     cprintf("Searching node: %d\n", slSearch( 1, 3)); // Not in list (different vdeadline); Should return 0
 
-    /// TEST REINSERT PREVIOUSLY DELETED PID ///
-    cprintf("\n");
-    cprintf("TEST REINSERT\n");
-    slInsert(skipList, 85, 2, CHANCE);
-    printSkipList(skipList);
+//     /// TEST REINSERT PREVIOUSLY DELETED PID ///
+//     cprintf("\n");
+//     cprintf("TEST REINSERT\n");
+//     slInsert(85, 2, CHANCE);
+//     printSkipList();
 
-    return 0;
-}
+//     return 0;
+// }

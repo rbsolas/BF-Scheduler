@@ -209,17 +209,16 @@ struct SkipNode {
 // skip list structure
 struct SkipList {
     struct SkipNode nodeList[NPROC + 1]; // Sentinel + Max # of processes
-    // struct SkipNode* head;
     int level;  // Current level of the skip list
 };
 
 
-struct SkipList* initSkipList();    // Function to initialize a new sorted skip list
+void initSkipList();    // Function to initialize a new sorted skip list
 int slUpLevel(float p);               // Function to up a level by chance for a new element
-void slInsert(struct SkipList* skipList, int value, int pid, float p);     // Function to insert a value into the sorted skip list
-int slSearch(struct SkipList* skipList, int value, int pid);  // Function to search for a value in the sorted skip list
-struct SkipNode* slDelete(struct SkipList* skipList, int value, int pid);            // Function to delete a node in the skip list
-void printSkipList(struct SkipList* skipList);                  // Function to print the entire skip list
+void slInsert(int value, int pid, float p);     // Function to insert a value into the sorted skip list
+int slSearch(int value, int pid);  // Function to search for a value in the sorted skip list
+struct SkipNode* slDelete(int value, int pid);            // Function to delete a node in the skip list
+void printSkipList();                  // Function to print the entire skip list
 
 
 

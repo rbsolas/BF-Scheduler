@@ -24,6 +24,3 @@
 #define SYS_shutdown  23
 #define SYS_nicefork  24
 #define SYS_schedlog  25
-
-
-#define SYS_skippers 30 //! Temporary Syscall
