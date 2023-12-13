@@ -220,6 +220,4 @@ int slSearch(int value, int pid);  // Function to search for a value in the sort
 struct SkipNode* slDelete(int value, int pid);            // Function to delete a node in the skip list
 void printSkipList();                  // Function to print the entire skip list
 
-
-
 void schedlog(int);

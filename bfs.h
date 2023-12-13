@@ -5,4 +5,3 @@
 #define CHANCE 0.25
 #define MAX_SKIPLIST_LEVEL 4
 #define SEED 62301983
-#define MAX_INT 2147483647

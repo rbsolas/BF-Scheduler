@@ -399,7 +399,6 @@ scheduler(void)
     sti();
 
     acquire(&ptable.lock);
-    // acquire(&sl->lock);
 
     // Populate/Update skip list with runnable processes
     // Choose process to schedule
@@ -473,13 +472,7 @@ scheduler(void)
           for (int k = 0; k <= highest_idx; k++) {
             pp = &ptable.proc[k];
             // Reference: <tick>|[<PID>]<process name>:<state>:<nice>(<maxlevel>)(<deadline>)(<quantum>)
-            cprintf(" | [%d] %s:%d: <n>(<l>)(<dl>)(<q>)", k, pp->name, pp->state); // NOTE: REMOVE SPACES
-
-            /*
-            if (pp->state == UNUSED) cprintf(" | [%d] ---:0", k);
-            else if (pp->state == RUNNING) cprintf(" | [%d]*%s:%d", k, pp->name, pp->state);
-            else cprintf(" | [%d] %s:%d", k, pp->name, pp->state);
-            */
+            cprintf("|[%d]%s:%d:<%d>(<l>)(<%d>)(<%d>),", k, pp->name, pp->state, pp->niceness, pp->vdeadline, pp->ticks_left);
           }
           cprintf("\n");
         }
@@ -493,7 +486,6 @@ scheduler(void)
       c->proc = 0;
     }
 
-    // release(&sl->lock);
     release(&ptable.lock);
   }
 }
@@ -706,8 +698,6 @@ void initSkipList() { // struct SkipList* skipList
   for (int i = 1; i <= NPROC; i++) {
       sl.nodeList[i].valid = 0;
   }
-  
-  // initlock(&sl.lock, "skiplist");
 }
 
 unsigned int seed = SEED;
@@ -856,10 +846,6 @@ int slSearch(int value, int pid) {
           dbgprintf(SKIPLIST_DBG_LINES, "PID %d with vdeadline %d found at level %d\n", pid, value, i);
           return currentIdx;
       }
-
-      // if (i > 0) { // Just to verify if the downward functionality of the skip list works.
-      //     cprintf("  Downward next value at level %d: %d\n", i-1, &sl.nodeList[current->forward[i-1]].value);
-      // }
   }
 
   dbgprintf(SKIPLIST_DBG_LINES, "PID %d with vdeadline %d not found\n", pid, value);
