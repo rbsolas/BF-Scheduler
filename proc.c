@@ -8,7 +8,7 @@
 #include "spinlock.h"
 
 // SETTING ANY OF THESE LINES TO 1 WILL SHOW DEBUG PRINT STATEMENTS
-#define SKIPLIST_DBG_LINES 0
+#define SKIPLIST_DBG_LINES 1
 #define SCHEDULER_DBG_LINES 0
 #define YIELD_DBG_LINES 0
 
@@ -837,6 +837,17 @@ int slSearch(int value, int pid) {
       }
 
       currentIdx = current->forward[i];
+
+      //! MIGHT NEED REFACTORING (TEMPORARY FIX FOR NOW)
+      if (sl.nodeList[currentIdx].value == value) {
+        while (current->forward[i] != -1 && sl.nodeList[current->forward[i]].valid != 0 
+          && sl.nodeList[current->forward[i]].pid != pid) {
+            current = &sl.nodeList[current->forward[i]];
+        }
+
+        if (sl.nodeList[current->forward[i]].pid == pid) currentIdx = current->forward[i];
+      }
+      //! END OF TEMP FIX CODE
 
       if (currentIdx != -1 
           && sl.nodeList[currentIdx].valid == 1 
