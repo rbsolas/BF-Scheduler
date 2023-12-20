@@ -8,8 +8,8 @@
 #include "spinlock.h"
 
 // SETTING ANY OF THESE LINES TO 1 WILL SHOW DEBUG PRINT STATEMENTS
-#define SKIPLIST_DBG_LINES 1
-#define SCHEDULER_DBG_LINES 0
+#define SKIPLIST_DBG_LINES 0
+#define SCHEDULER_DBG_LINES 1
 #define YIELD_DBG_LINES 0
 
 struct {
@@ -684,9 +684,11 @@ void initSkipList() { // struct SkipList* skipList
   sl.level = 0;
 
   // Initialize head node kept at index 0
-  sl.nodeList[0].value = -1;
-  sl.nodeList[0].pid = -1;
   sl.nodeList[0].valid = 1;   // Valid bit for sentinel should always be true
+  sl.nodeList[0].value = -1;
+  sl.nodeList[0].pid = -1; // All actual processes have positive PIDs
+  sl.nodeList[0].maxlevel = MAX_SKIPLIST_LEVEL;
+
 
   // Sentinel is alone and sad, no forward and backward neighbors
   for(int i = 0; i < MAX_SKIPLIST_LEVEL; i++) { 
@@ -696,7 +698,13 @@ void initSkipList() { // struct SkipList* skipList
 
   // Set valid bit for all other nodes to 0 (empty list)
   for (int i = 1; i <= NPROC; i++) {
-      sl.nodeList[i].valid = 0;
+    sl.nodeList[i].valid = 0;
+    sl.nodeList[i].value = -1;
+    sl.nodeList[i].pid = -1;
+    for (int j = 0; j < MAX_SKIPLIST_LEVEL; j++){
+      sl.nodeList[i].forward[j] = -1;
+      sl.nodeList[i].backward[j] = -1;
+    }
   }
 }
 
@@ -719,16 +727,16 @@ int slUpLevel(float p) {
 
 // Function to insert a value into the sorted skip list
 void slInsert(int value, int pid, float p) {
-  if (sl.level == -1) return;
+  if (sl.level < 0) return;
 
-  struct SkipNode* update[4];
+  struct SkipNode* update[4]; // Temp array to store copies of a node
   dbgprintf(SKIPLIST_DBG_LINES, "Inserting PID %d with vdeadline %d:\n", pid, value);
 
   //* 1 - FIND THE NODE TO INSERT NEW NODE AT
   // ----------------------------------------------------
 
   int currentIdx = 0;
-  struct SkipNode *current = &sl.nodeList[currentIdx]; // element 0 is the head node
+  struct SkipNode *current = &sl.nodeList[currentIdx]; // Element 0 is the head node
 
   for (int i = sl.level; i >= 0; i--) {
       while (current->forward[i] != -1 
@@ -754,7 +762,7 @@ void slInsert(int value, int pid, float p) {
 
   int newLevel = slUpLevel(p);
 
-  if (newLevel > sl.level) {
+  if (newLevel > sl.level) { // If new level is greater than the max level of the whole skip list, update max level
       for (int i = sl.level + 1; i <= newLevel; i++) {
           update[i] = &sl.nodeList[0];
       }
@@ -787,11 +795,12 @@ void slInsert(int value, int pid, float p) {
   newNode->value = value;
   newNode->pid = pid;
   newNode->valid = 1;
+  newNode->maxlevel = newLevel;
 
   //* 5 - UPDATE LINKS (OF NEW NODE, NEW BACKWARD, AND NEW FORWARD)
   // ----------------------------------------------------
 
-  for (int i = 0; i <= newLevel; i++) {      
+  for (int i = 0; i <= newNode->maxlevel; i++) {      
       if (update[i]->forward[i] != -1 && sl.nodeList[update[i]->forward[i]].valid == 1) {
         // Update Forward of new node
         newNode->forward[i] = update[i]->forward[i];
@@ -877,7 +886,7 @@ struct SkipNode* slDelete(int value, int pid) {
 
   struct SkipNode* nodeToDelete = &sl.nodeList[foundIdx];
 
-  for (int i = sl.level; i >= 0; i--) {
+  for (int i = nodeToDelete->maxlevel; i >= 0; i--) {
     struct SkipNode* backwardNode = &sl.nodeList[nodeToDelete->backward[i]];
     struct SkipNode* forwardNode = &sl.nodeList[nodeToDelete->forward[i]];
 
@@ -895,7 +904,7 @@ struct SkipNode* slDelete(int value, int pid) {
 
 // Function to print the entire skip list
 void printSkipList() {
-  if (sl.level == -1) return;
+  if (sl.level < 0) return;
 
   cprintf("Skip List:\n");
   for (int i = sl.level; i >= 0; i--) {

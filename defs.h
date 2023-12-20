@@ -198,12 +198,13 @@ void            clearpteu(pde_t *pgdir, char *uva);
 
 // node structure for the skip list
 struct SkipNode {
+    int valid;  // 0 = Node is empty (i.e. values can be ignored)
     int value;
     int pid;
-    // instead of keeping an array of pointers, we just store their array indices
+    // Instead of keeping an array of pointers, we just store their array indices
     int forward[MAX_SKIPLIST_LEVEL];
     int backward[MAX_SKIPLIST_LEVEL]; // note: doubly linked
-    int valid;  // 0 = Node is empty
+    int maxlevel;
 };
 
 // skip list structure
