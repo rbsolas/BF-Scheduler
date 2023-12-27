@@ -11,6 +11,7 @@
 #define SKIPLIST_DBG_LINES 0
 #define SCHEDULER_DBG_LINES 0
 #define YIELD_DBG_LINES 0
+#define BFS_PRINT 0
 
 struct {
   struct spinlock lock;
@@ -831,6 +832,9 @@ int slInsert(int value, int pid, float p) {
   }
 
   dbgprintf(SKIPLIST_DBG_LINES, "[INSERT] Insert PID %d with vdeadline %d Successful.\n", pid, value);
+  
+  // BFSPRINT
+  dbgprintf(BFS_PRINT, "inserted | [%d] %d\n", newNode->pid, newNode->maxlevel);
   return 0;
 }
 
@@ -919,6 +923,8 @@ struct SkipNode* slDelete(int value, int pid) {
   dbgprintf(SKIPLIST_DBG_LINES, "[DELETE] Deletion of PID %d with vdeadline %d Successful.\n", pid, value);
   nodeToDelete->valid = 0;
 
+  // BFSPRINT
+  dbgprintf(BFS_PRINT, "removed | [%d] %d\n", nodeToDelete->pid, nodeToDelete->maxlevel);
   return nodeToDelete;
 }
 
