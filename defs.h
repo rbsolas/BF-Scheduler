@@ -19,6 +19,7 @@ void            bwrite(struct buf*);
 
 // console.c
 void            consoleinit(void);
+void            dbgprintf(int, char*, ...);
 void            cprintf(char*, ...);
 void            consoleintr(int(*)(void));
 void            panic(char*) __attribute__((noreturn));
@@ -197,25 +198,27 @@ void            clearpteu(pde_t *pgdir, char *uva);
 
 // node structure for the skip list
 struct SkipNode {
+    int valid;  // 0 = Node is empty (i.e. values can be ignored)
     int value;
-    struct SkipNode* forward[MAX_LEVEL];
-    struct SkipNode* backward[MAX_LEVEL]; // note: doubly linked
+    int pid;
+    // Instead of keeping an array of pointers, we just store their array indices
+    int forward[MAX_SKIPLIST_LEVEL];
+    int backward[MAX_SKIPLIST_LEVEL];
+    int maxlevel;
 };
 
 // skip list structure
 struct SkipList {
-    struct SkipNode* head;
+    struct SkipNode nodeList[NPROC + 1]; // Sentinel + Max # of processes
     int level;  // Current level of the skip list
 };
 
 
-struct SkipList* initSkipList();    // Function to initialize a new sorted skip list
+void initSkipList();    // Function to initialize a new sorted skip list
 int slUpLevel(float p);               // Function to up a level by chance for a new element
-void slInsert(struct SkipList* skipList, int value, float p);     // Function to insert a value into the sorted skip list
-struct SkipNode* slSearch(struct SkipList* skipList, int value);  // Function to search for a value in the sorted skip list
-void printSkipList(struct SkipList* skipList);                  // Function to print the entire skip list
-void slDelete(struct SkipList* skipList, int value);            // Function to delete a node in the skip list
-
-
+int slInsert(int value, int pid, float p);     // Function to insert a value into the sorted skip list
+struct SkipNode* slSearch(int value, int pid);  // Function to search for a value in the sorted skip list
+struct SkipNode* slDelete(int value, int pid);            // Function to delete a node in the skip list
+void printSkipList();                  // Function to print the entire skip list
 
 void schedlog(int);

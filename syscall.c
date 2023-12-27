@@ -105,7 +105,6 @@ extern int sys_write(void);
 extern int sys_uptime(void);
 extern int sys_yield(void);
 extern int sys_shutdown(void);
-extern int sys_skippers(void);
 extern int sys_schedlog(void);
 extern int sys_nicefork(void);
 
@@ -135,7 +134,6 @@ static int (*syscalls[])(void) = {
 [SYS_shutdown] sys_shutdown,
 [SYS_nicefork] sys_nicefork,
 [SYS_schedlog] sys_schedlog,
-[SYS_skippers] sys_skippers, //! Temporary Syscall
 };
 
 void

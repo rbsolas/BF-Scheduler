@@ -27,7 +27,6 @@ int uptime(void);
 int yield(void);
 int shutdown(void);
 int nicefork(void);
-int skippers(void); //! Temporary Syscall
 int schedlog(int);
 
 // ulib.c
