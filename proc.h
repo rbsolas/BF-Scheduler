@@ -57,6 +57,7 @@ struct proc {
   // It is computed as the current time (in ticks) plus the product of the process’ priority
   // ratio and the default quantum amount.
   int ticks_left;
+  int maxlevel;
 };
 
 // Process memory is laid out contiguously, low addresses first:

@@ -451,6 +451,7 @@ scheduler(void)
       switchuvm(nextProc);
       nextProc->state = RUNNING;
       nextProc->ticks_left = BFS_DEFAULT_QUANTUM;
+      nextProc->maxlevel = firstNode->maxlevel;
 
       dbgprintf(SCHEDULER_DBG_LINES, "NEXTPROC pid: %d, vdeadline: %d, ticks left: %d\n", nextProc->pid,  nextProc->vdeadline, nextProc->ticks_left);
 
@@ -473,7 +474,7 @@ scheduler(void)
           for (int k = 0; k <= highest_idx; k++) {
             pp = &ptable.proc[k];
             // Reference: <tick>|[<PID>]<process name>:<state>:<nice>(<maxlevel>)(<deadline>)(<quantum>)
-            cprintf("|[%d]%s:%d:%d(<l>)(%d)(%d),", k, pp->name, pp->state, pp->niceness, pp->vdeadline, pp->ticks_left);
+            cprintf("|[%d]%s:%d:%d(%d)(%d)(%d),", k, pp->name, pp->state, pp->niceness, pp->maxlevel, pp->vdeadline, pp->ticks_left);
           }
           cprintf("\n");
         }
