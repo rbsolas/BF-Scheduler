@@ -203,7 +203,7 @@ struct SkipNode {
     int pid;
     // Instead of keeping an array of pointers, we just store their array indices
     int forward[MAX_SKIPLIST_LEVEL];
-    int backward[MAX_SKIPLIST_LEVEL]; // note: doubly linked
+    int backward[MAX_SKIPLIST_LEVEL];
     int maxlevel;
 };
 
@@ -216,8 +216,8 @@ struct SkipList {
 
 void initSkipList();    // Function to initialize a new sorted skip list
 int slUpLevel(float p);               // Function to up a level by chance for a new element
-void slInsert(int value, int pid, float p);     // Function to insert a value into the sorted skip list
-int slSearch(int value, int pid);  // Function to search for a value in the sorted skip list
+int slInsert(int value, int pid, float p);     // Function to insert a value into the sorted skip list
+struct SkipNode* slSearch(int value, int pid);  // Function to search for a value in the sorted skip list
 struct SkipNode* slDelete(int value, int pid);            // Function to delete a node in the skip list
 void printSkipList();                  // Function to print the entire skip list
 

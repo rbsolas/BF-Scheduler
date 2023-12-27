@@ -8,7 +8,7 @@
 #include "spinlock.h"
 
 // SETTING ANY OF THESE LINES TO 1 WILL SHOW DEBUG PRINT STATEMENTS
-#define SKIPLIST_DBG_LINES 0
+#define SKIPLIST_DBG_LINES 1
 #define SCHEDULER_DBG_LINES 1
 #define YIELD_DBG_LINES 0
 
@@ -414,6 +414,7 @@ scheduler(void)
           // We assume that possible duplicate would already be invalid upon slInsert
           if (slSearch(p->vdeadline, p->pid) == 0) 
             slInsert(p->vdeadline, p->pid, CHANCE);
+            // ! Add a case if slInsert fails?
           break;
         default:
           dbgprintf(SCHEDULER_DBG_LINES, "[%d] %d\n", p->pid, p->state);
@@ -683,17 +684,18 @@ procdump(void)
 void initSkipList() { // struct SkipList* skipList
   sl.level = 0;
 
+  struct SkipNode* head = &sl.nodeList[0];
+
   // Initialize head node kept at index 0
-  sl.nodeList[0].valid = 1;   // Valid bit for sentinel should always be true
-  sl.nodeList[0].value = -1;
-  sl.nodeList[0].pid = -1; // All actual processes have positive PIDs
-  sl.nodeList[0].maxlevel = MAX_SKIPLIST_LEVEL;
+  head->valid = 1;   // Valid bit for sentinel should always be true
+  head->value = -1;
+  head->pid = -1; // All actual processes have positive PIDs
+  head->maxlevel = MAX_SKIPLIST_LEVEL;
 
-
-  // Sentinel is alone and sad, no forward and backward neighbors
+  // Sentinel is alone and sad, no forward neighbors
   for(int i = 0; i < MAX_SKIPLIST_LEVEL; i++) { 
-    sl.nodeList[0].forward[i] = -1;
-    sl.nodeList[0].backward[i] = -1;
+    head->forward[i] = -1;
+    head->backward[i] = -1;
   }
 
   // Set valid bit for all other nodes to 0 (empty list)
@@ -725,36 +727,44 @@ int slUpLevel(float p) {
   return level;
 }
 
-// Function to insert a value into the sorted skip list
-void slInsert(int value, int pid, float p) {
-  if (sl.level < 0) return;
+int slFindFreeNode() {
+  int i;
 
-  struct SkipNode* update[4]; // Temp array to store copies of a node
-  dbgprintf(SKIPLIST_DBG_LINES, "Inserting PID %d with vdeadline %d:\n", pid, value);
+  for (i = 1; i < NPROC + 1; i++) {
+    if (sl.nodeList[i].valid != 1) {
+      break;
+    }
+
+    if (i == NPROC) return -1;
+  }
+
+  return i;
+}
+
+// Function to insert a value into the sorted skip list
+int slInsert(int value, int pid, float p) {
+  if (sl.level == -1) return -1;
+
+  struct SkipNode* backNodesToUpdate[4]; // Temp array to store copies of a node
+  int backNodesIdxToUpdate[4];
+  dbgprintf(SKIPLIST_DBG_LINES, "[INSERT] Inserting PID %d with vdeadline %d.\n", pid, value);
 
   //* 1 - FIND THE NODE TO INSERT NEW NODE AT
   // ----------------------------------------------------
-
-  int currentIdx = 0;
-  struct SkipNode *current = &sl.nodeList[currentIdx]; // Element 0 is the head node
+  int nodeIdxToInsert = 0;
+  struct SkipNode* nodeToInsert = &sl.nodeList[nodeIdxToInsert];
 
   for (int i = sl.level; i >= 0; i--) {
-      while (current->forward[i] != -1 
-        && sl.nodeList[current->forward[i]].value < value
-        && sl.nodeList[current->forward[i]].pid != pid) {
-          dbgprintf(SKIPLIST_DBG_LINES, "  Moving right at level %d (Current node: PID %d with vdeadline %d)\n", i, sl.nodeList[current->forward[i]].pid, sl.nodeList[current->forward[i]].value);
-          currentIdx = current->forward[i];
-          current = &sl.nodeList[currentIdx];
-      }
-
-      // PID already has an associated valid entry in the list
-      if (sl.nodeList[current->forward[i]].valid  == 1 && sl.nodeList[current->forward[i]].pid == pid){
-        dbgprintf(SKIPLIST_DBG_LINES, "  Duplicate PID %d found, insert failed\n", pid);
-        return;
-      }
-
-      update[i] = current;
-      dbgprintf(SKIPLIST_DBG_LINES, "  Reached the rightmost node at level %d (Current node: PID %d with vdeadline %d)\n", i, current->pid, current->value);
+    while (nodeToInsert->forward[i] != -1
+          && sl.nodeList[nodeToInsert->forward[i]].valid != 0
+          && sl.nodeList[nodeToInsert->forward[i]].value < value) {
+      nodeIdxToInsert = nodeToInsert->forward[i];
+      nodeToInsert = &sl.nodeList[nodeIdxToInsert];
+    }
+    
+    backNodesIdxToUpdate[i] = nodeIdxToInsert;
+    backNodesToUpdate[i] = nodeToInsert;
+    dbgprintf(SKIPLIST_DBG_LINES, "[INSERT] Reached the rightmost node at level %d (Current node: PID %d with vdeadline %d)\n", i, nodeToInsert->pid, nodeToInsert->value);
   }
 
   //* 2 - CHANCE FOR NODE TO BE INSERTED TO NEXT LEVEL
@@ -762,35 +772,30 @@ void slInsert(int value, int pid, float p) {
 
   int newLevel = slUpLevel(p);
 
+  dbgprintf(SKIPLIST_DBG_LINES, "[INSERT] slUpLevel = %d\n", newLevel);
+
   if (newLevel > sl.level) { // If new level is greater than the max level of the whole skip list, update max level
       for (int i = sl.level + 1; i <= newLevel; i++) {
-          update[i] = &sl.nodeList[0];
+          backNodesIdxToUpdate[i] = 0;
+          backNodesToUpdate[i] = &sl.nodeList[backNodesIdxToUpdate[i]];
       }
       sl.level = newLevel;
-      dbgprintf(SKIPLIST_DBG_LINES, "Increased skip list level to %d\n", sl.level);
+      dbgprintf(SKIPLIST_DBG_LINES, "[INSERT] Increased skip list level to %d\n", sl.level);
   }
 
   //* 3 - LOOK FOR NEAREST ARRAY ELEMENT TO PLACE NODE
   // ----------------------------------------------------
+  int newNodeIdx = slFindFreeNode();
 
-  int newIdx = -1;
-
-  // Look for nearest free node
-  for (int i = 1; i <= NPROC; i++) {
-    if (sl.nodeList[i].valid == 0) {
-      newIdx = i;
-      break;
-    }
+  if (newNodeIdx == -1) { 
+    dbgprintf(SKIPLIST_DBG_LINES, "[INSERT] Insert Failed. Not enough array space.\n");
+    return -1;
   }
 
-  if (newIdx == -1) {
-    dbgprintf(SKIPLIST_DBG_LINES, "   Skip list is full, insert failed\n");
-    return; //! NodeList Array is Full!
-  }
+  struct SkipNode* newNode = &sl.nodeList[newNodeIdx];
+
   //* 4 - CREATE NEW NODE
   // ----------------------------------------------------
-
-  struct SkipNode* newNode = &sl.nodeList[newIdx];
 
   newNode->value = value;
   newNode->pid = pid;
@@ -800,75 +805,77 @@ void slInsert(int value, int pid, float p) {
   //* 5 - UPDATE LINKS (OF NEW NODE, NEW BACKWARD, AND NEW FORWARD)
   // ----------------------------------------------------
 
-  for (int i = 0; i <= newNode->maxlevel; i++) {      
-      if (update[i]->forward[i] != -1 && sl.nodeList[update[i]->forward[i]].valid == 1) {
-        // Update Forward of new node
-        newNode->forward[i] = update[i]->forward[i];
+  for (int i = 0; i <= newNode->maxlevel; i++) {
+    struct SkipNode* frontNodeToUpdate;
 
-        // Update backward of new forward to equal new node, if it exists
-        int newForwardIdx = update[i]->forward[i];
-        sl.nodeList[newForwardIdx].backward[i] = newIdx;
-      } else {
-        newNode->forward[i] = -1;
-      }
-      
-      // update forward of backward
-      update[i]->forward[i] = newIdx;
+    if (backNodesToUpdate[i]->forward[i] != -1 && sl.nodeList[backNodesToUpdate[i]->forward[i]].valid == 1) {
+      frontNodeToUpdate = &sl.nodeList[backNodesToUpdate[i]->forward[i]];
 
-      // update backward of new node
-      newNode->backward[i] = currentIdx;
-      
-      dbgprintf(SKIPLIST_DBG_LINES, "  Inserted at level %d (Forward node vdeadline: %d, Backward node vdeadline: %d)\n", i, sl.nodeList[newNode->forward[i]].value, sl.nodeList[newNode->backward[i]].value);
+      // newNode's Forward
+      newNode->forward[i] = backNodesToUpdate[i]->forward[i];
+
+      // frontNodes' Backwards should point to newNode
+      frontNodeToUpdate->backward[i] = newNodeIdx;
+    } else {
+      newNode->forward[i] = -1;
+    }
+    
+    // newNode's Backward
+    newNode->backward[i] = backNodesIdxToUpdate[i];
+
+    // backNodes' Forwards should point to newNode
+    backNodesToUpdate[i]->forward[i] = newNodeIdx;
+
+    dbgprintf(SKIPLIST_DBG_LINES, "[INSERT] Inserted at level %d (FrontNode vdeadline: %d. BackNode vdeadline: %d)\n", i, sl.nodeList[newNode->forward[i]].value, sl.nodeList[newNode->backward[i]].value);
   }
+
+  dbgprintf(SKIPLIST_DBG_LINES, "[INSERT] Insert PID %d with vdeadline %d Successful.\n", pid, value);
+  return 0;
 }
 
 // Function to search for a value in the sorted skip list
-int slSearch(int value, int pid) {
+struct SkipNode* slSearch(int value, int pid) {
   if (sl.level == -1) return 0;
 
-  struct SkipNode* current = &sl.nodeList[0];
-  int currentIdx = 0;
+  dbgprintf(SKIPLIST_DBG_LINES, "[SEARCH] Searching for PID %d with vdeadline %d\n", pid, value);
+  struct SkipNode* currentNode = &sl.nodeList[0];
 
-  dbgprintf(SKIPLIST_DBG_LINES, "Searching for PID %d with vdeadline %d:\n", pid, value);
+  //* 1 - LOOP THROUGH SKIPLIST UNTIL WE FIND VALUE RIGHT BEFORE TARGET VALUE
+  // ----------------------------------------------------
 
   for (int i = sl.level; i >= 0; i--) {
-      dbgprintf(SKIPLIST_DBG_LINES, "  Checking level %d (Current node: PID %d with vdeadline)\n", i, current->pid, current->value);
+    dbgprintf(SKIPLIST_DBG_LINES, "[SEARCH] Checking level %d (Current node: PID %d with vdeadline)\n", i, currentNode->pid, currentNode->value);
 
       // Keep Looping WHILE:
       //    link to next forward exists (!= -1)
       //    linked forward node is valid (!= 0)
       //    value for forward is less than the searched value
-      //    associated pid is not the same
-      while (current->forward[i] != -1 && sl.nodeList[current->forward[i]].valid != 0 
-          && sl.nodeList[current->forward[i]].value < value) {
-          dbgprintf(SKIPLIST_DBG_LINES, "    Moving right at level %d (Current node: PID %d with vdeadline %d)\n", i, sl.nodeList[current->forward[i]].pid, sl.nodeList[current->forward[i]].value);
-          current = &sl.nodeList[current->forward[i]];
-      }
-
-      currentIdx = current->forward[i];
-
-      //! MIGHT NEED REFACTORING (TEMPORARY FIX FOR NOW)
-      if (sl.nodeList[currentIdx].value == value) {
-        while (current->forward[i] != -1 && sl.nodeList[current->forward[i]].valid != 0 
-          && sl.nodeList[current->forward[i]].pid != pid) {
-            current = &sl.nodeList[current->forward[i]];
-        }
-
-        if (sl.nodeList[current->forward[i]].pid == pid) currentIdx = current->forward[i];
-      }
-      //! END OF TEMP FIX CODE
-
-      if (currentIdx != -1 
-          && sl.nodeList[currentIdx].valid == 1 
-          && sl.nodeList[currentIdx].value == value 
-          && sl.nodeList[currentIdx].pid == pid) {
-
-          dbgprintf(SKIPLIST_DBG_LINES, "PID %d with vdeadline %d found at level %d\n", pid, value, i);
-          return currentIdx;
-      }
+    while (currentNode->forward[i] != -1
+          && sl.nodeList[currentNode->forward[i]].valid != 0
+          && sl.nodeList[currentNode->forward[i]].value < value) {
+      currentNode = &sl.nodeList[currentNode->forward[i]];
+      dbgprintf(SKIPLIST_DBG_LINES, "[SEARCH] Moving right at level %d (Current node: PID %d with vdeadline %d)\n", i, sl.nodeList[currentNode->forward[i]].pid, sl.nodeList[currentNode->forward[i]].value);
+    }
   }
 
-  dbgprintf(SKIPLIST_DBG_LINES, "PID %d with vdeadline %d not found\n", pid, value);
+  //* 2 - CHECK THROUGH BOTTOMMOST LEVEL FOR ANY DUPLICATES
+  // ----------------------------------------------------
+
+  // Check bottommost level
+  while (currentNode->forward[0] != -1
+        && sl.nodeList[currentNode->forward[0]].valid != 0
+        && sl.nodeList[currentNode->forward[0]].value == value) {
+    currentNode = &sl.nodeList[currentNode->forward[0]];
+    dbgprintf(SKIPLIST_DBG_LINES, "[SEARCH] Moving right at bottom level (Current node: PID %d with vdeadline %d)\n", sl.nodeList[currentNode->forward[0]].pid, sl.nodeList[currentNode->forward[0]].value);
+    
+
+    if (currentNode->pid == pid) {
+      dbgprintf(SKIPLIST_DBG_LINES, "[SEARCH] PID %d with vdeadline %d found.\n", pid, value);
+      return currentNode;
+    }
+  }
+
+  dbgprintf(SKIPLIST_DBG_LINES, "[SEARCH] PID %d with vdeadline %d not found.\n", pid, value);
   return 0;
 }
 
@@ -876,44 +883,58 @@ int slSearch(int value, int pid) {
 struct SkipNode* slDelete(int value, int pid) {
   if (sl.level == -1) return 0;
 
-  dbgprintf(SKIPLIST_DBG_LINES, "Deleting PID %d with vdeadline %d:\n", pid, value);
-  int foundIdx = slSearch(value, pid);
+  //* 1 - LOOK FOR TARGET VALUE
+  // ----------------------------------------------------
 
-  if (!foundIdx) {
-    dbgprintf(SKIPLIST_DBG_LINES, "    PID %d with vdeadline %d to delete not found\n", pid, value);
+  dbgprintf(SKIPLIST_DBG_LINES, "[DELETE] Deleting PID %d with vdeadline %d:\n", pid, value);
+  struct SkipNode* nodeToDelete = slSearch(value, pid);
+
+  if (nodeToDelete == 0) {
+    dbgprintf(SKIPLIST_DBG_LINES, "[DELETE] PID %d with vdeadline %d to delete not found\n", pid, value);
     return 0;
   } 
 
-  struct SkipNode* nodeToDelete = &sl.nodeList[foundIdx];
+  //* 2 - UPDATE LINKS (OF BACKWARD AND FRONT NODES)
+  // ----------------------------------------------------
 
   for (int i = nodeToDelete->maxlevel; i >= 0; i--) {
-    struct SkipNode* backwardNode = &sl.nodeList[nodeToDelete->backward[i]];
-    struct SkipNode* forwardNode = &sl.nodeList[nodeToDelete->forward[i]];
+    struct SkipNode* backNode = &sl.nodeList[nodeToDelete->backward[i]];
 
-  dbgprintf(SKIPLIST_DBG_LINES, "    (New backwardNode Forward: %d; New forwardnode backward: %d)\n", pid, value, backwardNode->forward[i], forwardNode->backward[i]);
+    if (nodeToDelete->forward[i] != -1) {
+      backNode->forward[i] = nodeToDelete->forward[i]; // BackNode's Forward should point to Forward
 
-    backwardNode->forward[i] = nodeToDelete->forward[i];
-    forwardNode->backward[i] = nodeToDelete->backward[i];
+      struct SkipNode* frontNode = &sl.nodeList[nodeToDelete->forward[i]];
+      frontNode->backward[i] = nodeToDelete->backward[i]; // FrontNode's Backward should point to Backward
+    } else {
+      backNode->forward[i] = -1;
+    }
+
+    // printf("[DELETE] At level %d (New backwardNode Forward: %d; New forwardnode backward: %d)\n", i, sl.nodeList[backNode->forward[i]].value, sl.nodeList[frontNode->backward[i]].value);
+
+    nodeToDelete->forward[i] = -1;
+    nodeToDelete->backward[i] = -1;
   }
 
-  dbgprintf(SKIPLIST_DBG_LINES, "Deleted PID %d with vdeadline %d\n", pid, value);
+  dbgprintf(SKIPLIST_DBG_LINES, "[DELETE] Deletion of PID %d with vdeadline %d Successful.\n", pid, value);
   nodeToDelete->valid = 0;
-  // nodeToDelete->pid = -1;
+
   return nodeToDelete;
 }
 
 // Function to print the entire skip list
 void printSkipList() {
-  if (sl.level < 0) return;
+  if (sl.level == -1) return;
 
   cprintf("Skip List:\n");
   for (int i = sl.level; i >= 0; i--) {
       struct SkipNode* head = &sl.nodeList[0];
-      struct SkipNode* current = &sl.nodeList[head->forward[i]];
+      int currentIdx = head->forward[i];
+      struct SkipNode* current = &sl.nodeList[currentIdx];
       cprintf("Level %d: ", i);
       while (current->valid == 1 && current->value != 0) {
-          cprintf("(%d) %d [%d]-> ", current->pid, current->value, sl.nodeList[current->backward[i]].forward[i]);
-          current = &sl.nodeList[current->forward[i]];
+          cprintf("(%d) %d [idx: %d]-> ", current->pid, current->value, currentIdx);
+          currentIdx = current->forward[i];
+          current = &sl.nodeList[currentIdx];
       }
       cprintf("0\n");
   }
