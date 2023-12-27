@@ -1,7 +1,7 @@
 #include "types.h"
 #include "user.h"
 
-#define CPU_BURST 1e9
+#define CPU_BURST 4e9
 
 int main() {
     int dummy = 0;

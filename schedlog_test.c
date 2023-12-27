@@ -2,16 +2,17 @@
 #include "user.h"
 
 int main() {
+    int niceSetter[] = {-20, -5, 0, 9};
     schedlog(10000);
 
-    for (int i = 0; i < 2; i++) {
-        if (fork() == 0) {
+    for (int i = 0; i < 4; i++) {
+        if (nicefork(niceSetter[i]) == 0) {
             char *argv[] = {"loop", 0};
             exec("loop", argv);
         }
     }
 
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 4; i++) {
     wait();
     }
     

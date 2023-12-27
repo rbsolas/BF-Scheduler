@@ -679,9 +679,6 @@ procdump(void)
   }
 }
 
-
-// !!! NEW FUNCTIONS INCOMING !!!
-
 // Function to initialize a new sorted skip list
 void initSkipList() { // struct SkipList* skipList
   sl.level = 0;
@@ -913,8 +910,6 @@ struct SkipNode* slDelete(int value, int pid) {
     } else {
       backNode->forward[i] = -1;
     }
-
-    // printf("[DELETE] At level %d (New backwardNode Forward: %d; New forwardnode backward: %d)\n", i, sl.nodeList[backNode->forward[i]].value, sl.nodeList[frontNode->backward[i]].value);
 
     nodeToDelete->forward[i] = -1;
     nodeToDelete->backward[i] = -1;
