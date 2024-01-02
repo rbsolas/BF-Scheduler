@@ -436,11 +436,11 @@ scheduler(void)
       dbgprintf(SCHEDULER_DBG_LINES, "HEAD valid: %d, value: %d, forward: %d\n", head->valid, head->value, head->forward[0]);
       dbgprintf(SCHEDULER_DBG_LINES, "FIRSTNODE valid: %d, pid: %d, vdeadline: %d\n", firstNode->valid,  firstNode->pid, firstNode->value);
 
+      struct proc* nextProc = &ptable.proc[firstNode->pid - 1]; // PID n corresponds to index n - 1
+
       // Delete the next proc from skiplist
       slDelete(firstNode->value, firstNode->pid);
 
-      struct proc* nextProc = &ptable.proc[firstNode->pid - 1]; // PID n corresponds to index n - 1
-      
       for (p = ptable.proc; p < &ptable.proc[NPROC]; p++) {
         if (p->pid == firstNode->pid) nextProc = p;
       }
