@@ -247,6 +247,8 @@ fork(void)
 
 // behaves like fork except that it also sets the nice value of the child process to the integer argument passed.
 int nicefork(int nice) {
+  if (nice < BFS_NICE_FIRST_LEVEL || nice > BFS_NICE_LAST_LEVEL) return -1;
+
   int pid;
   struct proc *np;
   struct proc *curproc = myproc();
@@ -260,7 +262,11 @@ int nicefork(int nice) {
     return -1;
   }
 
+  // Update Niceness & Virtual Deadline
   np->niceness = nice;
+
+  int prioRatio = np->niceness + 1;
+  np->vdeadline = ticks + prioRatio * BFS_DEFAULT_QUANTUM;
 
   pid = np->pid;
 
