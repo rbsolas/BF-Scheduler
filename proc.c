@@ -475,7 +475,11 @@ scheduler(void)
           for (int k = 0; k <= highest_idx; k++) {
             pp = &ptable.proc[k];
             // Reference: <tick>|[<PID>]<process name>:<state>:<nice>(<maxlevel>)(<deadline>)(<quantum>)
-            cprintf("|[%d]%s:%d:%d(%d)(%d)(%d),", k, pp->name, pp->state, pp->niceness, pp->maxlevel, pp->vdeadline, pp->ticks_left);
+            if (k == highest_idx)  {
+              cprintf("|[%d]%s:%d:%d(%d)(%d)(%d)", k, pp->name, pp->state, pp->niceness, pp->maxlevel, pp->vdeadline, pp->ticks_left);
+            } else {
+              cprintf("|[%d]%s:%d:%d(%d)(%d)(%d),", k, pp->name, pp->state, pp->niceness, pp->maxlevel, pp->vdeadline, pp->ticks_left);
+            }
           }
           cprintf("\n");
         }
