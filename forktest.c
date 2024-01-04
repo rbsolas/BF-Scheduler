@@ -21,7 +21,7 @@ forktest(void)
   printf(1, "fork test\n");
 
   for(n=0; n<N; n++){
-    pid = fork();
+    pid = fork(); //nicefork(n%39-20) <-- this is to just test nicefork
     if(pid < 0)
       break;
     if(pid == 0)

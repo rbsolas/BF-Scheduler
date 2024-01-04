@@ -12,6 +12,7 @@
 #define SCHEDULER_DBG_LINES 0
 #define YIELD_DBG_LINES 0
 #define BFS_PRINT 0
+#define NICEFORK_DBG_LINES 0
 
 struct {
   struct spinlock lock;
@@ -268,6 +269,8 @@ int nicefork(int nice) {
   int prioRatio = np->niceness + 1;
   np->vdeadline = ticks + prioRatio * BFS_DEFAULT_QUANTUM;
 
+  dbgprintf(NICEFORK_DBG_LINES, "PID %d; new niceness: %d, new vdl: %d\n", np->pid, np->niceness, np->vdeadline);
+
   pid = np->pid;
 
   acquire(&ptable.lock);
@@ -460,7 +463,7 @@ scheduler(void)
       nextProc->ticks_left = BFS_DEFAULT_QUANTUM;
       nextProc->maxlevel = firstNode->maxlevel;
 
-      dbgprintf(SCHEDULER_DBG_LINES, "NEXTPROC pid: %d, vdeadline: %d, ticks left: %d\n", nextProc->pid,  nextProc->vdeadline, nextProc->ticks_left);
+      dbgprintf(SCHEDULER_DBG_LINES, "NEXTPROC pid: %d, nice: %d, vdeadline: %d, ticks left: %d\n", nextProc->pid,  nextProc->niceness, nextProc->vdeadline, nextProc->ticks_left);
 
       if (schedlog_active) {
         if (ticks > schedlog_lasttick) {
