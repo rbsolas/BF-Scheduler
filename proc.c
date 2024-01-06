@@ -11,7 +11,7 @@
 #define SKIPLIST_DBG_LINES 0
 #define SCHEDULER_DBG_LINES 0
 #define YIELD_DBG_LINES 0
-#define BFS_PRINT 0
+#define BFS_PRINT 1
 #define NICEFORK_DBG_LINES 0
 
 struct {
@@ -485,9 +485,9 @@ scheduler(void)
             pp = &ptable.proc[k];
             // Reference: <tick>|[<PID>]<process name>:<state>:<nice>(<maxlevel>)(<deadline>)(<quantum>)
             if (k == highest_idx)  {
-              cprintf("|[%d]%s:%d:%d(%d)(%d)(%d)", k, pp->name, pp->state, pp->niceness, pp->maxlevel, pp->vdeadline, pp->ticks_left);
+              cprintf("|[%d]%s:%d:%d(%d)(%d)(%d)", pp->pid, pp->name, pp->state, pp->niceness, pp->maxlevel, pp->vdeadline, pp->ticks_left);
             } else {
-              cprintf("|[%d]%s:%d:%d(%d)(%d)(%d),", k, pp->name, pp->state, pp->niceness, pp->maxlevel, pp->vdeadline, pp->ticks_left);
+              cprintf("|[%d]%s:%d:%d(%d)(%d)(%d),", pp->pid, pp->name, pp->state, pp->niceness, pp->maxlevel, pp->vdeadline, pp->ticks_left);
             }
           }
           cprintf("\n");
