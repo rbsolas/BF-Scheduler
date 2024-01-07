@@ -430,7 +430,7 @@ scheduler(void)
       c->proc = nextProc;
       switchuvm(nextProc);
       nextProc->state = RUNNING;
-      nextProc->ticks_left = BFS_DEFAULT_QUANTUM;
+      if (nextProc->ticks_left <= 0) nextProc->ticks_left = BFS_DEFAULT_QUANTUM;
       nextProc->maxlevel = firstNode->maxlevel;
 
       dbgprintf(SCHEDULER_DBG_LINES, "NEXTPROC pid: %d, nice: %d, vdeadline: %d, ticks left: %d\n", nextProc->pid,  nextProc->niceness, nextProc->vdeadline, nextProc->ticks_left);
@@ -439,7 +439,7 @@ scheduler(void)
         if (ticks > schedlog_lasttick) {
           schedlog_active = 0;
         } else {
-          cprintf("%d", ticks);
+          cprintf("%d|", ticks);
 
           struct proc *pp;
           int highest_idx = -1;
@@ -463,7 +463,7 @@ scheduler(void)
                 if (slSearch(pp->vdeadline, pp->pid) == 0) {
                   maxlevel = -1;
                 }
-                cprintf("|[%d]%s:%d:%d(%d)(%d)(%d)", pp->pid, pp->name, pp->state, pp->niceness, maxlevel, pp->vdeadline, pp->ticks_left);
+                cprintf("[%d]%s:%d:%d(%d)(%d)(%d)", pp->pid, pp->name, pp->state, pp->niceness, maxlevel, pp->vdeadline, pp->ticks_left);
                 break;
             }
             if (k != highest_idx) cprintf(",");
