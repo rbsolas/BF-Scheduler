@@ -11,7 +11,7 @@
 #define SKIPLIST_DBG_LINES 0
 #define SCHEDULER_DBG_LINES 0
 #define YIELD_DBG_LINES 0
-#define BFS_PRINT 1
+#define BFS_PRINT 0
 #define NICEFORK_DBG_LINES 0
 
 struct {
@@ -121,10 +121,7 @@ found:
 
   // BFS NEW VALS
   p->niceness = 0;
-
-  int prioRatio = p->niceness + 1;
-
-  p->vdeadline = ticks + prioRatio * BFS_DEFAULT_QUANTUM;
+  p->vdeadline = ticks + PRIO_RATIO(p->niceness) * BFS_DEFAULT_QUANTUM;
 
   return p;
 }
@@ -189,7 +186,32 @@ growproc(int n)
 }
 
 int populateNewProc(struct proc *np, struct proc *curproc) {
-  int i;
+
+
+  return 0;
+}
+
+// Create a new process copying p as the parent.
+// Sets up stack to return as if from system call.
+// Caller must set state of returned proc to RUNNABLE.
+int
+fork(void)
+{
+  return nicefork(0);
+}
+
+// behaves like fork except that it also sets the nice value of the child process to the integer argument passed.
+int nicefork(int nice) {
+  if (nice < BFS_NICE_FIRST_LEVEL || nice > BFS_NICE_LAST_LEVEL) return -1;
+
+  int pid, i;
+  struct proc *np;
+  struct proc *curproc = myproc();
+
+  // Allocate process.
+  if((np = allocproc()) == 0){
+    return -1;
+  }
 
   // Copy process state from proc.
   if((np->pgdir = copyuvm(curproc->pgdir, curproc->sz)) == 0){
@@ -213,63 +235,11 @@ int populateNewProc(struct proc *np, struct proc *curproc) {
 
   safestrcpy(np->name, curproc->name, sizeof(curproc->name));
 
-  return 0;
-}
-
-// Create a new process copying p as the parent.
-// Sets up stack to return as if from system call.
-// Caller must set state of returned proc to RUNNABLE.
-int
-fork(void)
-{
-  int pid;
-  struct proc *np;
-  struct proc *curproc = myproc();
-
-  // Allocate process.
-  if((np = allocproc()) == 0){
-    return -1;
-  }
-
-  if (populateNewProc(np, curproc) == -1) {
-    return -1;
-  }
-
-  pid = np->pid;
-
-  acquire(&ptable.lock);
-
-  np->state = RUNNABLE;
-
-  release(&ptable.lock);
-
-  return pid;
-}
-
-// behaves like fork except that it also sets the nice value of the child process to the integer argument passed.
-int nicefork(int nice) {
-  if (nice < BFS_NICE_FIRST_LEVEL || nice > BFS_NICE_LAST_LEVEL) return -1;
-
-  int pid;
-  struct proc *np;
-  struct proc *curproc = myproc();
-
-  // Allocate process.
-  if((np = allocproc()) == 0){
-    return -1;
-  }
-
-  if (populateNewProc(np, curproc) == -1) {
-    return -1;
-  }
-
   // Update Niceness & Virtual Deadline
   np->niceness = nice;
+  np->vdeadline = ticks + PRIO_RATIO(np->niceness) * BFS_DEFAULT_QUANTUM;
 
-  int prioRatio = np->niceness + 1;
-  np->vdeadline = ticks + prioRatio * BFS_DEFAULT_QUANTUM;
-
-  dbgprintf(NICEFORK_DBG_LINES, "PID %d; new niceness: %d, new vdl: %d\n", np->pid, np->niceness, np->vdeadline);
+  dbgprintf(NICEFORK_DBG_LINES, "PID %d; niceness: %d, prioratio: %d, vdl: %d\n", np->pid, np->niceness, PRIO_RATIO(np->niceness), np->vdeadline);
 
   pid = np->pid;
 
@@ -542,8 +512,7 @@ yield(void)
   // Update vdeadline
   if (myproc()->ticks_left <= 0) {
     dbgprintf(YIELD_DBG_LINES, "[%d] QUANTUM CONSUMED, UPDATE VDEADLINE\n", myproc()->pid);
-    int prioRatio = myproc()->niceness + 1;
-    myproc()->vdeadline = ticks + prioRatio * BFS_DEFAULT_QUANTUM;
+    myproc()->vdeadline = ticks + PRIO_RATIO(myproc()->niceness) * BFS_DEFAULT_QUANTUM;
   }
 
   sched();
