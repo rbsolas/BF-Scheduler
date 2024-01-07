@@ -1,3 +1,4 @@
+Checklist:
 - [X] Foundations - diego
     - [X] Niceness
     - [X] Virtual DL
@@ -6,16 +7,18 @@
     - [X] Insert - ivan
     - [X] Delete - rohan 
     - [X] Lookup - ivan
+- [X] Skip List Functions (Refactor)
+    - [X] Insert - diego
+    - [X] Delete - diego
+    - [X] Lookup - diego
 - [X] nicefork - diego
-- [_] BFS Printing - 
-- [_] schedlog - ivan
-- [_] Skip List Sched Integration
+- [X] BFS Printing - rohan
+- [X] schedlog - ivan
+- [X] Skip List Sched Integration
 
-- [_] Documentation
-    - [_] PDF
-    - [_] Video
-
-
+- [X] Documentation
+    - [X] PDF
+    - [X] Video
 
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-24ddc0f5d75046c5622901739e7c5dd533143b0c8e959d652212380cedb1ea36.svg)](https://classroom.github.com/a/8HsS6-oF)
 xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
