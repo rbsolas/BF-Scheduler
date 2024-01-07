@@ -821,7 +821,7 @@ int slInsert(int value, int pid, float p) {
   dbgprintf(SKIPLIST_DBG_LINES, "[INSERT] Insert PID %d with vdeadline %d Successful.\n", pid, value);
   
   // BFSPRINT
-  dbgprintf(BFS_PRINT, "inserted | [%d] %d\n", newNode->pid, newNode->maxlevel);
+  dbgprintf(BFS_PRINT, "inserted|[%d]%d\n", newNode->pid, newNode->maxlevel);
   return 0;
 }
 
@@ -909,7 +909,7 @@ struct SkipNode* slDelete(int value, int pid) {
   nodeToDelete->valid = 0;
 
   // BFSPRINT
-  dbgprintf(BFS_PRINT, "removed | [%d] %d\n", nodeToDelete->pid, nodeToDelete->maxlevel);
+  dbgprintf(BFS_PRINT, "removed|[%d]%d\n", nodeToDelete->pid, nodeToDelete->maxlevel);
   return nodeToDelete;
 }
 
