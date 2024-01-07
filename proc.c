@@ -439,26 +439,34 @@ scheduler(void)
         if (ticks > schedlog_lasttick) {
           schedlog_active = 0;
         } else {
-            cprintf("%d", ticks);
+          cprintf("%d", ticks);
 
-            struct proc *pp;
-            int highest_idx = -1;
+          struct proc *pp;
+          int highest_idx = -1;
 
-            for (int k = 0; k < NPROC; k++) {
-              pp = &ptable.proc[k];
-              if (pp->state != UNUSED) {
-                highest_idx = k;
-              }
+          for (int k = 0; k < NPROC; k++) {
+            pp = &ptable.proc[k];
+            if (pp->state != UNUSED) {
+              highest_idx = k;
             }
+          }
 
           for (int k = 0; k <= highest_idx; k++) {
             pp = &ptable.proc[k];
             // Reference: <tick>|[<PID>]<process name>:<state>:<nice>(<maxlevel>)(<deadline>)(<quantum>)
-            if (k == highest_idx)  {
-              cprintf("|[%d]%s:%d:%d(%d)(%d)(%d)", pp->pid, pp->name, pp->state, pp->niceness, pp->maxlevel, pp->vdeadline, pp->ticks_left);
-            } else {
-              cprintf("|[%d]%s:%d:%d(%d)(%d)(%d),", pp->pid, pp->name, pp->state, pp->niceness, pp->maxlevel, pp->vdeadline, pp->ticks_left);
+            switch (pp->state) {
+              case UNUSED:
+                cprintf("[-]---:0:-(-)(-)(-)");
+                break;
+              default:
+                int maxlevel = pp->maxlevel;
+                if (slSearch(pp->vdeadline, pp->pid) == 0) {
+                  maxlevel = -1;
+                }
+                cprintf("|[%d]%s:%d:%d(%d)(%d)(%d)", pp->pid, pp->name, pp->state, pp->niceness, maxlevel, pp->vdeadline, pp->ticks_left);
+                break;
             }
+            if (k != highest_idx) cprintf(",");
           }
           cprintf("\n");
         }
