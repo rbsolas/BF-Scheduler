@@ -11,7 +11,7 @@
 #define SKIPLIST_DBG_LINES 0
 #define SCHEDULER_DBG_LINES 0
 #define YIELD_DBG_LINES 0
-#define BFS_PRINT 0
+#define BFS_PRINT 1
 #define NICEFORK_DBG_LINES 0
 
 struct {
