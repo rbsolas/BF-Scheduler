@@ -700,7 +700,7 @@ void initSkipList() { // struct SkipList* skipList
 }
 
 unsigned int seed = SEED;
-unsigned int random(int max) {
+unsigned int random(unsigned max) {
   seed ^= seed << 17;
   seed ^= seed >> 7;
   seed ^= seed << 5;
