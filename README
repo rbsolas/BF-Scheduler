@@ -1,26 +1,15 @@
-Checklist:
-- [X] Foundations - diego
-    - [X] Niceness
-    - [X] Virtual DL
-    - [X] bfs.h
-- [X] Skip List Functions
-    - [X] Insert - ivan
-    - [X] Delete - rohan 
-    - [X] Lookup - ivan
-- [X] Skip List Functions (Refactor)
-    - [X] Insert - diego
-    - [X] Delete - diego
-    - [X] Lookup - diego
-- [X] nicefork - diego
-- [X] BFS Printing - rohan
-- [X] schedlog - ivan
-- [X] Skip List Sched Integration
+# BF Scheduler
 
-- [X] Documentation
-    - [X] PDF
-    - [X] Video
+## About the Project
+The BF Scheduler (BFS), created by Con Kolivas in 2009, is a scheduling algorithm that served as an alternative to the Completely Fair Scheduler (CFS) originally designed for the Linux kernel. In this project, we applied the algorithm to develop our own simplified version of the BFS for the xv6 kernel.
+
+## Contributors
+* Ivan Cadiang
+* Diego Montenejo
+* Rohan Solas
 
 [![Review Assignment Due Date](https://classroom.github.com/assets/deadline-readme-button-24ddc0f5d75046c5622901739e7c5dd533143b0c8e959d652212380cedb1ea36.svg)](https://classroom.github.com/a/8HsS6-oF)
+
 xv6 is a re-implementation of Dennis Ritchie's and Ken Thompson's Unix
 Version 6 (v6).  xv6 loosely follows the structure and style of v6,
 but is implemented for a modern x86-based multiprocessor using ANSI C.
